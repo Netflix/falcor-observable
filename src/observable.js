@@ -2,39 +2,40 @@
 "use strict";
 export interface IDisposable { dispose(): void }
 
-export interface IObservable<T> {
+export interface IObservable<T, E = Error> {
   subscribe(
-    onNext: ?PartialObserver<T> | ((value: T) => void),
-    onError: ?(error: Error) => void,
+    onNext: ?PartialObserver<T, E> | ((value: T) => void),
+    onError: ?(error: E) => void,
     onCompleted: ?() => void
   ): IDisposable
 }
 
-export interface IObserver<T> {
+export interface IObserver<T, E = Error> {
   onNext(value: T): void,
-  onError(error: Error): void,
+  onError(error: E): void,
   onCompleted(): void
 }
 
-export type PartialObserver<T> = {
+export type PartialObserver<T, E = Error> = {
   +onNext?: (value: T) => void,
-  +onError?: (error: Error) => void,
+  +onError?: (error: E) => void,
   +onCompleted?: () => void
 };
 
-interface ISubscriptionObserver<T> extends IObserver<T> {
+interface ISubscriptionObserver<T, E = Error> extends IObserver<T, E> {
   _closed: boolean
 }
 
-class FunctionsSubscriptionObserver<T> implements ISubscriptionObserver<T> {
+class FunctionsSubscriptionObserver<T, E = Error>
+  implements ISubscriptionObserver<T, E> {
   _closed: boolean;
   _onNext: ?(value: T) => void;
-  _onError: ?(error: Error) => void;
+  _onError: ?(error: E) => void;
   _onCompleted: ?() => void;
 
   constructor(
     onNext: ?(value: T) => void,
-    onError: ?(error: Error) => void,
+    onError: ?(error: E) => void,
     onCompleted: ?() => void
   ): void {
     this._closed = false;
@@ -53,7 +54,7 @@ class FunctionsSubscriptionObserver<T> implements ISubscriptionObserver<T> {
     }
   }
 
-  onError(error: Error): void {
+  onError(error: E): void {
     if (this._closed) {
       return;
     }
@@ -76,11 +77,12 @@ class FunctionsSubscriptionObserver<T> implements ISubscriptionObserver<T> {
   }
 }
 
-class PartialSubscriptionObserver<T> implements ISubscriptionObserver<T> {
+class PartialSubscriptionObserver<T, E = Error>
+  implements ISubscriptionObserver<T, E> {
   _closed: boolean;
-  _partial: PartialObserver<T>;
+  _partial: PartialObserver<T, E>;
 
-  constructor(partial: PartialObserver<T>): void {
+  constructor(partial: PartialObserver<T, E>): void {
     this._closed = false;
     this._partial = partial;
   }
@@ -95,7 +97,7 @@ class PartialSubscriptionObserver<T> implements ISubscriptionObserver<T> {
     }
   }
 
-  onError(error: Error): void {
+  onError(error: E): void {
     if (this._closed) {
       return;
     }
@@ -118,14 +120,14 @@ class PartialSubscriptionObserver<T> implements ISubscriptionObserver<T> {
   }
 }
 
-class Subscription<T> implements IDisposable {
-  _observer: ISubscriptionObserver<T>;
+class Subscription<T, E = Error> implements IDisposable {
+  _observer: ISubscriptionObserver<T, E>;
   _subscription: ?IDisposable | (() => void);
 
   constructor(
-    subscribe: (observer: IObserver<T>) => ?IDisposable | (() => void),
-    observerOrOnNext: ?PartialObserver<T> | ((value: T) => void),
-    onError: ?(error: Error) => void,
+    subscribe: (observer: IObserver<T, E>) => ?IDisposable | (() => void),
+    observerOrOnNext: ?PartialObserver<T, E> | ((value: T) => void),
+    onError: ?(error: E) => void,
     onCompleted: ?() => void
   ): void {
     const observer =
@@ -155,18 +157,18 @@ class Subscription<T> implements IDisposable {
   }
 }
 
-class Observable<T> implements IObservable<T> {
-  _subscribe: (observer: IObserver<T>) => ?IDisposable | (() => void);
+class Observable<T, E = Error> implements IObservable<T, E> {
+  _subscribe: (observer: IObserver<T, E>) => ?IDisposable | (() => void);
 
   constructor(
-    subscribe: (observer: IObserver<T>) => ?IDisposable | (() => void)
+    subscribe: (observer: IObserver<T, E>) => ?IDisposable | (() => void)
   ): void {
     this._subscribe = subscribe;
   }
 
   subscribe(
-    observerOrOnNext: ?PartialObserver<T> | ((value: T) => void),
-    onError: ?(error: Error) => void,
+    observerOrOnNext: ?PartialObserver<T, E> | ((value: T) => void),
+    onError: ?(error: E) => void,
     onCompleted: ?() => void
   ): IDisposable {
     return new Subscription(
@@ -178,18 +180,18 @@ class Observable<T> implements IObservable<T> {
   }
 
   static create(
-    subscribe: (observer: IObserver<T>) => ?IDisposable | (() => void)
-  ): IObservable<T> {
+    subscribe: (observer: IObserver<T, E>) => ?IDisposable | (() => void)
+  ): IObservable<T, E> {
     return new this(subscribe);
   }
 
-  static empty(): IObservable<T> {
+  static empty(): IObservable<T, E> {
     return this.create(observer => {
       observer.onCompleted();
     });
   }
 
-  static of(...values: T[]): IObservable<T> {
+  static of(...values: T[]): IObservable<T, E> {
     return this.create(observer => {
       for (const value of values) {
         observer.onNext(value);
@@ -198,7 +200,7 @@ class Observable<T> implements IObservable<T> {
     });
   }
 
-  static throw(error: Error): IObservable<T> {
+  static throw(error: E): IObservable<T, E> {
     return this.create(observer => {
       observer.onError(error);
     });
