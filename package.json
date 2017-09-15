@@ -1,0 +1,47 @@
+{
+  "name": "falcor-observable",
+  "version": "0.1.0",
+  "description": "An Observable implementation compatible with the Falcor DataSource API. Avoids try/catch.",
+  "main": "./lib/index.js",
+  "scripts": {
+    "flow": "flow",
+    "flow-coverage": "flow-coverage-report",
+    "lint": "eslint src/ test/",
+    "prepare": "test -e lib && rm -r lib; flow-remove-types --out-dir lib/ src/ && (cd src/; find * -type f -name '*.js' -exec cp {} ../lib/{}.flow \\;)",
+    "prettier": "prettier --write src/**.js test/**.js",
+    "check-formatting": "prettier --list-different src/**.js test/**.js",
+    "test": "mocha -r flow-remove-types/register",
+    "release": "standard-version"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Netflix/falcor-observable.git"
+  },
+  "keywords": [
+    "falcor"
+  ],
+  "author": "Laurence Rowe",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Netflix/falcor-observable/issues"
+  },
+  "homepage": "https://github.com/Netflix/falcor-observable#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@lrowe/eslint-plugin-flow-remove-types": "^0.0.1",
+    "chai": "^4.0.2",
+    "eslint": "^4.0.0",
+    "flow-bin": "^0.54.1",
+    "flow-coverage-report": "^0.3.0",
+    "flow-remove-types": "^1.2.1",
+    "mocha": "^3.4.2",
+    "prettier": "^1.6.1",
+    "sinon": "^3.1.0",
+    "standard-version": "^4.2.0"
+  },
+  "flow-coverage-report": {
+    "includeGlob": [
+      "src/**/*.js"
+    ]
+  }
+}
