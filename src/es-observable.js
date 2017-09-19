@@ -45,7 +45,7 @@ export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
 // Error policy.
 
 type TryCatch = <A, B, R>(f: (A, B) => R, a: A, b: B) => R | typeof errorObject;
-type ReportError = (e: Error) => void;
+type ReportError = (e: Error, site: string) => void;
 
 const errorObject = { e: undefined };
 
@@ -70,19 +70,34 @@ function dontTryCatch<A, B, R>(
   return f(a, b);
 }
 
-function ignoreError(e: Error): void {
-  // do nothing
+function defaultReportError(e: Error, site: string): void {
+  /* eslint-disable no-console */
+  /* global window, ErrorEvent */
+  declare class ErrorEvent extends Event {}
+
+  if (typeof window !== "undefined" && typeof ErrorEvent !== "undefined") {
+    const event = new ErrorEvent("error", {
+      error: e,
+      message: `(falcor-observable) ${site} threw ${String(e)}`
+    });
+    window.dispatchEvent(event);
+    return;
+  }
+  if (typeof console !== "undefined") {
+    console.warn(`(falcor-observable) ${site} threw`, e);
+    return;
+  }
 }
 
 let tryCatch: TryCatch = doTryCatch;
-let reportError: ReportError = ignoreError;
+let reportError: ReportError = defaultReportError;
 
 function shouldCatchErrors(shouldCatch: boolean): void {
   tryCatch = shouldCatch ? doTryCatch : dontTryCatch;
 }
 
-function setReportError(reporter: ?ReportError): void {
-  reportError = reporter || ignoreError;
+function setReportError(reporter: ReportError = defaultReportError): void {
+  reportError = reporter;
 }
 
 // Functions to be called within tryCatch().
@@ -152,7 +167,7 @@ class SubscriptionObserver<T, E = Error>
     }
     const result = tryCatch(callNext, observer, value);
     if (result === errorObject) {
-      reportError(errorObject.e);
+      reportError(errorObject.e, "observer next");
       errorObject.e = undefined;
     }
   }
@@ -166,12 +181,12 @@ class SubscriptionObserver<T, E = Error>
     subscription._observer = undefined;
     const result = tryCatch(callError, observer, errorValue);
     if (result === errorObject) {
-      reportError(errorObject.e);
+      reportError(errorObject.e, "observer error");
       errorObject.e = undefined;
     }
     const cleanupResult = tryCatch(callCleanup, subscription);
     if (cleanupResult === errorObject) {
-      reportError(errorObject.e);
+      reportError(errorObject.e, "subscriber cleanup");
       errorObject.e = undefined;
     }
   }
@@ -185,12 +200,12 @@ class SubscriptionObserver<T, E = Error>
     subscription._observer = undefined;
     const result = tryCatch(callComplete, observer);
     if (result === errorObject) {
-      reportError(errorObject.e);
+      reportError(errorObject.e, "observer complete");
       errorObject.e = undefined;
     }
     const cleanupResult = tryCatch(callCleanup, subscription);
     if (cleanupResult === errorObject) {
-      reportError(errorObject.e);
+      reportError(errorObject.e, "subscriber cleanup");
       errorObject.e = undefined;
     }
   }
@@ -211,7 +226,7 @@ class Subscription<T, E = Error> implements ISubscription {
     this._observer = observer;
     const startResult = tryCatch(callStart, observer, this);
     if (startResult === errorObject) {
-      reportError(errorObject.e);
+      reportError(errorObject.e, "observer start");
       errorObject.e = undefined;
     }
     if (typeof this._observer === "undefined") {
@@ -247,7 +262,7 @@ class Subscription<T, E = Error> implements ISubscription {
     if (typeof this._observer === "undefined") {
       const cleanupResult = tryCatch(callCleanup, this);
       if (cleanupResult === errorObject) {
-        reportError(errorObject.e);
+        reportError(errorObject.e, "subscriber cleanup");
         errorObject.e = undefined;
       }
     }
@@ -261,7 +276,7 @@ class Subscription<T, E = Error> implements ISubscription {
     this._observer = undefined;
     const cleanupResult = tryCatch(callCleanup, this);
     if (cleanupResult === errorObject) {
-      reportError(errorObject.e);
+      reportError(errorObject.e, "subscriber cleanup");
       errorObject.e = undefined;
     }
   }
