@@ -11,6 +11,7 @@
     "prettier": "prettier --write src/**.js test/**.js",
     "check-formatting": "prettier --list-different src/**.js test/**.js",
     "test": "mocha -r flow-remove-types/register",
+    "spec": "node -r flow-remove-types/register spec-tests.js",
     "release": "standard-version"
   },
   "repository": {
@@ -26,15 +27,19 @@
     "url": "https://github.com/Netflix/falcor-observable/issues"
   },
   "homepage": "https://github.com/Netflix/falcor-observable#readme",
-  "dependencies": {},
+  "dependencies": {
+    "symbol-observable": "^1.0.4"
+  },
   "devDependencies": {
     "@lrowe/eslint-plugin-flow-remove-types": "^0.0.1",
     "chai": "^4.0.2",
+    "es-observable": "github:lrowe/proposal-observable#2989c4a",
     "eslint": "^4.0.0",
     "flow-bin": "^0.54.1",
     "flow-coverage-report": "^0.3.0",
     "flow-remove-types": "^1.2.1",
     "mocha": "^3.4.2",
+    "moon-unit": "^0.2.2",
     "prettier": "^1.6.1",
     "sinon": "^3.1.0",
     "standard-version": "^4.2.0"

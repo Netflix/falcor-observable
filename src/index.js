@@ -2,11 +2,12 @@
 "use strict";
 export type {
   IDisposable,
-  IObservable,
-  IObserver,
-  PartialObserver
-} from "./observable";
+  IClassicObservable as IObservable,
+  IClassicSubscriptionObserver as IObserver,
+  ClassicObserver as PartialObserver
+} from "./classic-observable";
 
-const { Observable } = require("./observable");
+const { Observable } = require("./classic-observable");
+const { shouldCatchErrors, setReportError } = require("./es-observable");
 
-module.exports = { Observable };
+module.exports = { Observable, shouldCatchErrors, setReportError };
