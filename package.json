@@ -41,6 +41,7 @@
     "mocha": "^3.4.2",
     "moon-unit": "^0.2.2",
     "prettier": "^1.6.1",
+    "rxjs": "^5.4.3",
     "sinon": "^3.1.0",
     "standard-version": "^4.2.0"
   },

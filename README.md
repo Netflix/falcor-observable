@@ -2,6 +2,9 @@
 
 An Observable implementation compatible with the Falcor DataSource API.
 
+Unless you are implementing a Falcor DataSource you will likely be better
+served by the more fully featured [RxJS]. 
+
 ## Error handling policy
 
 The error handling policy of the Observable is configurable to allow for
@@ -11,8 +14,41 @@ By default, errors thrown by the subscriber function are caught as they are in
 the Promise API. Errors calling the observer's notification callbacks are
 swallowed by default.
 
-To disable all try/catch usage in the Observable, call
+To disable all try/catch usage in falcor-observable, call
 `shouldCatchErrors(false)`.
 
 To install an error reporter (a function taking a single error argument), call
 `setReportError(console.error)`.
+
+## Interoperability with other Observable implementations
+
+This package is interoperable with [RxJS] and other Observable implementations
+following the [symbol-observable] protocol. Use `Observable.from(other)` to
+convert between implementations:
+
+```js
+const Rx = require("rxjs/Rx");
+const falcorObservable = require("falcor-observable").Observable;
+
+// Take any compliant observable.
+const obs = Rx.Observable.of(1, 2, 3);
+
+// Convert to falcor-observable.
+const fobs = falcorObservable.from(obs);
+fobs.subscribe({
+  onNext(value) {
+    console.log("onNext", value);
+  }
+});
+
+// Convert to RxJS.
+const rxobs = Rx.Observable.from(fobs);
+rxobs.subscribe({
+  next(value) {
+    console.log("next", value);
+  }
+});
+```
+
+[RxJS]: https://www.npmjs.com/package/rxjs
+[symbol-observable]: https://www.npmjs.com/package/symbol-observable
