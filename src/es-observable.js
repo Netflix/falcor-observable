@@ -5,15 +5,15 @@
 const symbolObservable = require("symbol-observable").default;
 
 export interface ISubscriptionObserver<T, E = Error> {
-  next(value: T): void,
-  error(errorValue: E): void,
-  complete(): void,
-  +closed: boolean
+  next(value: T): void;
+  error(errorValue: E): void;
+  complete(): void;
+  +closed: boolean;
 }
 
 export interface ISubscription {
-  unsubscribe(): void,
-  +closed: boolean
+  unsubscribe(): void;
+  +closed: boolean;
 }
 
 type Cleanup = ?{ +unsubscribe: () => void } | (() => void);
@@ -39,7 +39,7 @@ export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
     observerOrOnNext: ?Observer<T, E> | ((value: T) => void),
     onError: ?(errorValue: E) => void,
     onComplete: ?() => void
-  ): ISubscription
+  ): ISubscription;
 }
 
 // Error policy.

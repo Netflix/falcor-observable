@@ -17,15 +17,15 @@ import type {
 } from "./es-observable";
 
 export interface IDisposable {
-  dispose(): void,
-  +isDisposed: boolean
+  dispose(): void;
+  +isDisposed: boolean;
 }
 
 export interface IClassicSubscriptionObserver<T, E = Error> {
-  onNext(value: T): void,
-  onError(error: E): void,
-  onCompleted(): void,
-  +isStopped: boolean
+  onNext(value: T): void;
+  onError(error: E): void;
+  onCompleted(): void;
+  +isStopped: boolean;
 }
 
 export type ClassicObserver<T, E = Error> = {
@@ -39,7 +39,7 @@ export interface IClassicObservable<T, E = Error> {
     onNext: ?ClassicObserver<T, E> | ((value: T) => void),
     onError: ?(error: E) => void,
     onCompleted: ?() => void
-  ): IDisposable
+  ): IDisposable;
 }
 
 type ClassicCleanup = ?{ +dispose: () => void } | (() => void);
