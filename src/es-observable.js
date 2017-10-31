@@ -76,11 +76,9 @@ function dontTryCatch<A, B, R>(
   return f(a, b);
 }
 
-let tryCatch: TryCatch = doTryCatch;
-
-function shouldCatchErrors(shouldCatch: boolean): void {
-  tryCatch = shouldCatch ? doTryCatch : dontTryCatch;
-}
+let tryCatch: TryCatch = process.env.FALCOR_OBSERVABLE_NO_CATCH
+  ? dontTryCatch
+  : doTryCatch;
 
 // Functions to be called within tryCatch().
 
@@ -376,6 +374,5 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
 module.exports = {
   BaseObservable,
   Observable: EsObservable,
-  Subscription,
-  shouldCatchErrors
+  Subscription
 };
