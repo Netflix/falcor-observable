@@ -14,8 +14,9 @@ By default, errors thrown by the subscriber function are caught as they are in
 the Promise API. Errors calling the observer's notification callbacks are
 swallowed by default.
 
-To disable all try/catch usage in falcor-observable, call
-`shouldCatchErrors(false)`.
+To disable all try/catch usage in falcor-observable, call set the environment
+variable `FALCOR_OBSERVABLE_NO_CATCH` to a non empty value before this package
+is first imported.
 
 ## Interoperability with other Observable implementations
 
