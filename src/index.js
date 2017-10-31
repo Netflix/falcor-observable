@@ -8,6 +8,6 @@ export type {
 } from "./classic-observable";
 
 const { Observable } = require("./classic-observable");
-const { shouldCatchErrors, setReportError } = require("./es-observable");
+const { shouldCatchErrors } = require("./es-observable");
 
-module.exports = { Observable, shouldCatchErrors, setReportError };
+module.exports = { Observable, shouldCatchErrors };

@@ -17,9 +17,6 @@ swallowed by default.
 To disable all try/catch usage in falcor-observable, call
 `shouldCatchErrors(false)`.
 
-To install an error reporter (a function taking a single error argument), call
-`setReportError(console.error)`.
-
 ## Interoperability with other Observable implementations
 
 This package is interoperable with [RxJS] and other Observable implementations
