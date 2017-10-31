@@ -45,9 +45,15 @@ export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
 // Error policy.
 
 type TryCatch = <A, B, R>(f: (A, B) => R, a: A, b: B) => R | typeof errorObject;
-type ReportError = (e: Error, site: string) => void;
 
 const errorObject = { e: undefined };
+
+function reportError(e: Error): void {
+  // See https://github.com/ReactiveX/rxjs/issues/3004#issuecomment-339720668
+  setImmediate(function reportErrorImmediate() {
+    throw e;
+  });
+}
 
 function doTryCatch<A, B, R>(
   f: (A, B) => R,
@@ -70,34 +76,10 @@ function dontTryCatch<A, B, R>(
   return f(a, b);
 }
 
-function defaultReportError(e: Error, site: string): void {
-  /* eslint-disable no-console */
-  /* global window, ErrorEvent */
-  declare class ErrorEvent extends Event {}
-
-  if (typeof window !== "undefined" && typeof ErrorEvent !== "undefined") {
-    const event = new ErrorEvent("error", {
-      error: e,
-      message: `(falcor-observable) ${site} threw ${String(e)}`
-    });
-    window.dispatchEvent(event);
-    return;
-  }
-  if (typeof console !== "undefined") {
-    console.warn(`(falcor-observable) ${site} threw`, e);
-    return;
-  }
-}
-
 let tryCatch: TryCatch = doTryCatch;
-let reportError: ReportError = defaultReportError;
 
 function shouldCatchErrors(shouldCatch: boolean): void {
   tryCatch = shouldCatch ? doTryCatch : dontTryCatch;
-}
-
-function setReportError(reporter: ReportError = defaultReportError): void {
-  reportError = reporter;
 }
 
 // Functions to be called within tryCatch().
@@ -167,7 +149,7 @@ class SubscriptionObserver<T, E = Error>
     }
     const result = tryCatch(callNext, observer, value);
     if (result === errorObject) {
-      reportError(errorObject.e, "observer next");
+      reportError(errorObject.e);
       errorObject.e = undefined;
     }
   }
@@ -181,12 +163,12 @@ class SubscriptionObserver<T, E = Error>
     subscription._observer = undefined;
     const result = tryCatch(callError, observer, errorValue);
     if (result === errorObject) {
-      reportError(errorObject.e, "observer error");
+      reportError(errorObject.e);
       errorObject.e = undefined;
     }
     const cleanupResult = tryCatch(callCleanup, subscription);
     if (cleanupResult === errorObject) {
-      reportError(errorObject.e, "subscriber cleanup");
+      reportError(errorObject.e);
       errorObject.e = undefined;
     }
   }
@@ -200,12 +182,12 @@ class SubscriptionObserver<T, E = Error>
     subscription._observer = undefined;
     const result = tryCatch(callComplete, observer);
     if (result === errorObject) {
-      reportError(errorObject.e, "observer complete");
+      reportError(errorObject.e);
       errorObject.e = undefined;
     }
     const cleanupResult = tryCatch(callCleanup, subscription);
     if (cleanupResult === errorObject) {
-      reportError(errorObject.e, "subscriber cleanup");
+      reportError(errorObject.e);
       errorObject.e = undefined;
     }
   }
@@ -226,7 +208,7 @@ class Subscription<T, E = Error> implements ISubscription {
     this._observer = observer;
     const startResult = tryCatch(callStart, observer, this);
     if (startResult === errorObject) {
-      reportError(errorObject.e, "observer start");
+      reportError(errorObject.e);
       errorObject.e = undefined;
     }
     if (typeof this._observer === "undefined") {
@@ -262,7 +244,7 @@ class Subscription<T, E = Error> implements ISubscription {
     if (typeof this._observer === "undefined") {
       const cleanupResult = tryCatch(callCleanup, this);
       if (cleanupResult === errorObject) {
-        reportError(errorObject.e, "subscriber cleanup");
+        reportError(errorObject.e);
         errorObject.e = undefined;
       }
     }
@@ -276,7 +258,7 @@ class Subscription<T, E = Error> implements ISubscription {
     this._observer = undefined;
     const cleanupResult = tryCatch(callCleanup, this);
     if (cleanupResult === errorObject) {
-      reportError(errorObject.e, "subscriber cleanup");
+      reportError(errorObject.e);
       errorObject.e = undefined;
     }
   }
@@ -395,6 +377,5 @@ module.exports = {
   BaseObservable,
   Observable: EsObservable,
   Subscription,
-  shouldCatchErrors,
-  setReportError
+  shouldCatchErrors
 };
