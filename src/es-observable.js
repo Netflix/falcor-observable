@@ -44,41 +44,50 @@ export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
 
 // Error policy.
 
-type TryCatch = <A, B, R>(f: (A, B) => R, a: A, b: B) => R | typeof errorObject;
-
 const errorObject = { e: undefined };
 
-function reportError(e: Error): void {
-  // See https://github.com/ReactiveX/rxjs/issues/3004#issuecomment-339720668
-  setImmediate(function reportErrorImmediate() {
-    throw e;
-  });
-}
+let tryCatch;
+let tryCatchResult;
 
-function doTryCatch<A, B, R>(
-  f: (A, B) => R,
-  a: A,
-  b: B
-): R | typeof errorObject {
-  try {
+if (process.env.FALCOR_OBSERVABLE_NO_CATCH) {
+  tryCatch = function dontTryCatch<A, B>(f: (A, B) => void, a: A, b: B): void {
+    f(a, b);
+  };
+
+  tryCatchResult = function dontTryCatchResult<A, B, R>(
+    f: (A, B) => R,
+    a: A,
+    b: B
+  ): R | typeof errorObject {
     return f(a, b);
-  } catch (e) {
-    errorObject.e = e;
-    return errorObject;
-  }
-}
+  };
+} else {
+  const throwError = (e: Error) => {
+    throw e;
+  };
 
-function dontTryCatch<A, B, R>(
-  f: (A, B) => R,
-  a: A,
-  b: B
-): R | typeof errorObject {
-  return f(a, b);
-}
+  tryCatch = function doTryCatch<A, B>(f: (A, B) => void, a: A, b: B): void {
+    try {
+      f(a, b);
+    } catch (e) {
+      // See https://github.com/ReactiveX/rxjs/issues/3004#issuecomment-339720668
+      setImmediate(throwError, e);
+    }
+  };
 
-let tryCatch: TryCatch = process.env.FALCOR_OBSERVABLE_NO_CATCH
-  ? dontTryCatch
-  : doTryCatch;
+  tryCatchResult = function doTryCatchResult<A, B, R>(
+    f: (A, B) => R,
+    a: A,
+    b: B
+  ): R | typeof errorObject {
+    try {
+      return f(a, b);
+    } catch (e) {
+      errorObject.e = e;
+      return errorObject;
+    }
+  };
+}
 
 // Functions to be called within tryCatch().
 
@@ -145,11 +154,7 @@ class SubscriptionObserver<T, E = Error>
     if (typeof observer === "undefined") {
       return;
     }
-    const result = tryCatch(callNext, observer, value);
-    if (result === errorObject) {
-      reportError(errorObject.e);
-      errorObject.e = undefined;
-    }
+    tryCatch(callNext, observer, value);
   }
 
   error(errorValue: E): void {
@@ -159,16 +164,8 @@ class SubscriptionObserver<T, E = Error>
       return;
     }
     subscription._observer = undefined;
-    const result = tryCatch(callError, observer, errorValue);
-    if (result === errorObject) {
-      reportError(errorObject.e);
-      errorObject.e = undefined;
-    }
-    const cleanupResult = tryCatch(callCleanup, subscription);
-    if (cleanupResult === errorObject) {
-      reportError(errorObject.e);
-      errorObject.e = undefined;
-    }
+    tryCatch(callError, observer, errorValue);
+    tryCatch(callCleanup, subscription);
   }
 
   complete(): void {
@@ -178,16 +175,8 @@ class SubscriptionObserver<T, E = Error>
       return;
     }
     subscription._observer = undefined;
-    const result = tryCatch(callComplete, observer);
-    if (result === errorObject) {
-      reportError(errorObject.e);
-      errorObject.e = undefined;
-    }
-    const cleanupResult = tryCatch(callCleanup, subscription);
-    if (cleanupResult === errorObject) {
-      reportError(errorObject.e);
-      errorObject.e = undefined;
-    }
+    tryCatch(callComplete, observer);
+    tryCatch(callCleanup, subscription);
   }
 
   get closed(): boolean {
@@ -204,16 +193,12 @@ class Subscription<T, E = Error> implements ISubscription {
     observer: Observer<T, E>
   ): void {
     this._observer = observer;
-    const startResult = tryCatch(callStart, observer, this);
-    if (startResult === errorObject) {
-      reportError(errorObject.e);
-      errorObject.e = undefined;
-    }
+    tryCatch(callStart, observer, this);
     if (typeof this._observer === "undefined") {
       return;
     }
     const subscriptionObserver = new SubscriptionObserver(this);
-    const subscriberResult = tryCatch(
+    const subscriberResult = tryCatchResult(
       callSubscriber,
       subscriber,
       subscriptionObserver
@@ -240,11 +225,7 @@ class Subscription<T, E = Error> implements ISubscription {
     }
     this._cleanup = cleanup;
     if (typeof this._observer === "undefined") {
-      const cleanupResult = tryCatch(callCleanup, this);
-      if (cleanupResult === errorObject) {
-        reportError(errorObject.e);
-        errorObject.e = undefined;
-      }
+      tryCatch(callCleanup, this);
     }
   }
 
@@ -254,11 +235,7 @@ class Subscription<T, E = Error> implements ISubscription {
       return;
     }
     this._observer = undefined;
-    const cleanupResult = tryCatch(callCleanup, this);
-    if (cleanupResult === errorObject) {
-      reportError(errorObject.e);
-      errorObject.e = undefined;
-    }
+    tryCatch(callCleanup, this);
   }
 
   get closed(): boolean {
