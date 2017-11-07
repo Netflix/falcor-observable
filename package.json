@@ -1,6 +1,6 @@
 {
   "name": "falcor-observable",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "An Observable implementation compatible with the Falcor DataSource API. Avoids try/catch.",
   "main": "./lib/index.js",
   "scripts": {
