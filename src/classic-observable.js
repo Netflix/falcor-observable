@@ -113,7 +113,6 @@ class DisposableFromSubscription implements IDisposable {
 
 class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
   implements IClassicObservable<T, E>, IAdaptsToObservable<T, E> {
-
   subscribe(
     observerOrOnNext: ?ClassicObserver<T, E> | ((value: T) => void),
     onError: ?(error: E) => void,
@@ -175,7 +174,9 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
 
 function pipe(input, ...operators) {
   const C = typeof this === "function" ? this : (ClassicObservable: any);
-  return C.from(EsObservable.pipe(C.fromClassicObservable(input), ...operators));
+  return C.from(
+    EsObservable.pipe(C.fromClassicObservable(input), ...operators)
+  );
 }
 
 ClassicObservable.pipe = pipe;

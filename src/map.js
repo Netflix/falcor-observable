@@ -1,5 +1,5 @@
 // @flow
-/* eslint-disable no-undefined */
+"use strict";
 
 import type {
   IObservable,

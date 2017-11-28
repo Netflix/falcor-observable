@@ -61,7 +61,11 @@ describe("Observable subscribe", function() {
     const onError = stub();
     const onCompleted = stub();
 
-    Observable.pipe(Observable.of(0,1,2), map(x => x + 1), map(x => x + 1)).subscribe({ onNext, onError, onCompleted});
+    Observable.pipe(
+      Observable.of(0, 1, 2),
+      map(x => x + 1),
+      map(x => x + 1)
+    ).subscribe({ onNext, onError, onCompleted });
 
     expect(onNext.args).to.deep.equal([[2], [3], [4]]);
     expect(onError.called).equal(false);

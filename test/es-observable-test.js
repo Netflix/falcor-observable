@@ -61,10 +61,14 @@ describe("ES Observable subscribe", function() {
     const error = stub();
     const complete = stub();
 
-    Observable.pipe(Observable.of(0,1,2), map(x => x + 1), map(x => x + 1)).subscribe({ next, error, complete});
+    Observable.pipe(
+      Observable.of(0, 1, 2),
+      map(x => x + 1),
+      map(x => x + 1)
+    ).subscribe({ next, error, complete });
 
     expect(next.args).to.deep.equal([[2], [3], [4]]);
     expect(error.called).equal(false);
     expect(complete.calledOnce).equal(true);
-  })
+  });
 });
