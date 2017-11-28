@@ -113,6 +113,7 @@ class DisposableFromSubscription implements IDisposable {
 
 class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
   implements IClassicObservable<T, E>, IAdaptsToObservable<T, E> {
+
   subscribe(
     observerOrOnNext: ?ClassicObserver<T, E> | ((value: T) => void),
     onError: ?(error: E) => void,
@@ -155,6 +156,28 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
       return ({ unsubscribe: cleanup.dispose }: any);
     });
   }
+
+  static fromClassicObservable(
+    classicObservable: IClassicObservable<T, E>
+  ): this {
+    const C = typeof this === "function" ? this : (ClassicObservable: any);
+    const observableProp: ?() => IObservable<T, E> =
+      // $FlowFixMe: No symbol support.
+      classicObservable[symbolObservable];
+    if (typeof observableProp === "function") {
+      return C.from(classicObservable);
+    }
+    return C.create(classicObserver =>
+      classicObservable.subscribe(classicObserver)
+    );
+  }
 }
+
+function pipe(input, ...operators) {
+  const C = typeof this === "function" ? this : (ClassicObservable: any);
+  return C.from(EsObservable.pipe(C.fromClassicObservable(input), ...operators));
+}
+
+ClassicObservable.pipe = pipe;
 
 module.exports = { Observable: ClassicObservable };

@@ -348,6 +348,12 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
   }
 }
 
+function pipe(input, ...operators) {
+  return operators.reduce((acc,curr) => curr(acc), EsObservable.from(input));
+}
+
+EsObservable.pipe = pipe;
+
 module.exports = {
   BaseObservable,
   Observable: EsObservable,
