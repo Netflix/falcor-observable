@@ -6,7 +6,7 @@ const { stub } = require("sinon");
 const map = require("../src/map");
 
 describe("map function", function() {
-  it("functions", function() {
+  it("transforms values", function() {
     const observable = Observable.of(0, 1, 2);
     const next = stub();
     const error = stub();
