@@ -55,3 +55,30 @@ describe("ES Observable subscribe", function() {
     Observable.of(1, 2, 3).subscribe({});
   });
 });
+
+describe("ES Observable fromClassicObservable", function() {
+  it("adapts from classic observable", function() {
+    const disposable = {
+      isDisposed: false,
+      dispose() {
+        this.isDisposed = true;
+      }
+    };
+    let observer;
+    const classic = {
+      subscribe(obs, onError, onCompleted) {
+        observer = obs;
+        return disposable;
+      }
+    };
+    const obs = Observable.fromClassicObservable(classic);
+    const next = stub();
+    const error = stub();
+    const complete = stub();
+    const subscription = obs.subscribe({ next, error, complete });
+    (observer: any).onNext(1);
+    expect(next.args).to.deep.equal([[1]]);
+    subscription.unsubscribe();
+    expect(disposable.isDisposed).to.equal(true);
+  });
+});

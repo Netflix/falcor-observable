@@ -3,6 +3,8 @@
 "use strict";
 
 const symbolObservable = require("symbol-observable").default;
+const { ClassicFromEsSubscriptionObserver } = require("./classic-observer");
+import type { IClassicObservable } from "./classic-observable";
 
 export interface ISubscriptionObserver<T, E = Error> {
   next(value: T): void;
@@ -33,6 +35,7 @@ export interface IAdaptsToObservable<T, E = Error> {
   // Flow cannot parse computed properties.
   //[symbolObservable](): IObservable<T, E>
 }
+type ObservableFrom<T, E> = IAdaptsToObservable<T, E> | Iterable<T>;
 
 export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
   subscribe(
@@ -262,7 +265,7 @@ class BaseObservable<T, E = Error> {
     });
   }
 
-  static from(obsOrIter: IAdaptsToObservable<T, E> | Iterable<T>): this {
+  static from(obsOrIter: ObservableFrom<T, E>): this {
     if (typeof obsOrIter === "undefined" || obsOrIter === null) {
       throw new TypeError();
     }
@@ -299,6 +302,21 @@ class BaseObservable<T, E = Error> {
     }
 
     throw new TypeError();
+  }
+
+  static fromClassicObservable(classic: IClassicObservable<T, E>): this {
+    if (symbolObservable in classic) {
+      return this.from(classic);
+    }
+    if (typeof classic.subscribe !== "function") {
+      throw new TypeError();
+    }
+    return new this(observer => {
+      const disposable = classic.subscribe(
+        new ClassicFromEsSubscriptionObserver(observer)
+      );
+      return () => disposable.dispose();
+    });
   }
 
   static empty(): this {
@@ -342,7 +360,7 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
     return super.of.call(C, ...values);
   }
 
-  static from(obsOrIter: IAdaptsToObservable<T, E> | Iterable<T>): this {
+  static from(obsOrIter: ObservableFrom<T, E>): this {
     const C = typeof this === "function" ? this : (EsObservable: any);
     return super.from.call(C, obsOrIter);
   }
