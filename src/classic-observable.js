@@ -1,5 +1,4 @@
 // @flow
-/* eslint-disable no-undefined */
 "use strict";
 
 const symbolObservable = require("symbol-observable").default;
