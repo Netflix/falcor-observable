@@ -3,6 +3,7 @@
 const { Observable } = require("../src/es-observable");
 const { expect } = require("chai");
 const { stub } = require("sinon");
+import type { IClassicObservable } from "../src/classic-observable";
 
 describe("ES Observable subscribe", function() {
   it("functions", function(done) {
@@ -53,5 +54,32 @@ describe("ES Observable subscribe", function() {
 
   it("empty partial observer", function() {
     Observable.of(1, 2, 3).subscribe({});
+  });
+});
+
+describe("ES Observable from", function() {
+  it("adapts from classic observable", function() {
+    const disposable = {
+      isDisposed: false,
+      dispose() {
+        this.isDisposed = true;
+      }
+    };
+    let observer;
+    const classicObservable: IClassicObservable<number> = {
+      subscribe(obs, onError, onCompleted) {
+        observer = obs;
+        return disposable;
+      }
+    };
+    const esObservable = Observable.from(classicObservable);
+    const next = stub();
+    const error = stub();
+    const complete = stub();
+    const subscription = esObservable.subscribe({ next, error, complete });
+    (observer: any).onNext(1);
+    expect(next.args).to.deep.equal([[1]]);
+    subscription.unsubscribe();
+    expect(disposable.isDisposed).to.equal(true);
   });
 });
