@@ -11,3 +11,4 @@ script:
   - npm run lint
   - npm run check-formatting
   - npm run flow-coverage
+  - npm run spec
