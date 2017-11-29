@@ -10,5 +10,6 @@ export type {
 } from "./classic-observer";
 
 const { Observable } = require("./classic-observable");
+const operators = require("./operators");
 
-module.exports = { Observable };
+module.exports = { Observable, operators };

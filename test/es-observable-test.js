@@ -1,6 +1,7 @@
 // @flow
 "use strict";
 const { Observable } = require("../src/es-observable");
+const { map } = require("../src/operators/map");
 const { expect } = require("chai");
 const { stub } = require("sinon");
 
@@ -81,6 +82,22 @@ describe("ES Observable", function() {
       expect(next.args).to.deep.equal([[1]]);
       subscription.unsubscribe();
       expect(disposable.isDisposed).to.equal(true);
+    });
+  });
+
+  describe("pipe", function() {
+    it("pipes", function() {
+      const next = stub();
+      const error = stub();
+      const complete = stub();
+
+      Observable.of(0, 1, 2)
+        .pipe(map(x => x + 1), map(x => x + 1))
+        .subscribe({ next, error, complete });
+
+      expect(next.args).to.deep.equal([[2], [3], [4]]);
+      expect(error.called).equal(false);
+      expect(complete.calledOnce).equal(true);
     });
   });
 });
