@@ -3,6 +3,7 @@
 const { Observable } = require("../src/classic-observable");
 const { expect } = require("chai");
 const { stub } = require("sinon");
+const { map } = require("../src/operators/map");
 import type { IClassicObservable } from "../src/classic-observable";
 
 describe("Classic Observable", function() {
@@ -82,6 +83,22 @@ describe("Classic Observable", function() {
       expect(onNext.args).to.deep.equal([[1]]);
       subscription.dispose();
       expect(disposable.isDisposed).to.equal(true);
+    });
+  });
+
+  describe("pipe", function() {
+    it("pipes", function() {
+      const onNext = stub();
+      const onError = stub();
+      const onCompleted = stub();
+
+      Observable.of(0, 1, 2)
+        .pipe(map(x => x + 1), map(x => x + 1))
+        .subscribe({ onNext, onError, onCompleted });
+
+      expect(onNext.args).to.deep.equal([[2], [3], [4]]);
+      expect(onError.called).equal(false);
+      expect(onCompleted.calledOnce).equal(true);
     });
   });
 });
