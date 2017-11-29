@@ -3,10 +3,13 @@
 export type {
   IDisposable,
   IClassicObservable as IObservable,
-  IClassicSubscriptionObserver as IObserver,
   ClassicObserver as PartialObserver
 } from "./classic-observable";
+export type {
+  IClassicSubscriptionObserver as IObserver
+} from "./classic-observer";
 
 const { Observable } = require("./classic-observable");
+const operators = require("./operators");
 
-module.exports = { Observable };
+module.exports = { Observable, operators };

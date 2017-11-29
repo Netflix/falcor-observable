@@ -1,8 +1,15 @@
 // @flow
-/* eslint-disable no-undefined */
 "use strict";
 
 const symbolObservable = require("symbol-observable").default;
+const {
+  tryCatch,
+  tryCatchResult,
+  symbolError,
+  popError
+} = require("./try-catch");
+const { ClassicFromEsSubscriptionObserver } = require("./classic-observer");
+import type { IClassicObservable } from "./classic-observable";
 
 export interface ISubscriptionObserver<T, E = Error> {
   next(value: T): void;
@@ -33,6 +40,7 @@ export interface IAdaptsToObservable<T, E = Error> {
   // Flow cannot parse computed properties.
   //[symbolObservable](): IObservable<T, E>
 }
+type ObservableFrom<T, E> = IAdaptsToObservable<T, E> | Iterable<T>;
 
 export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
   subscribe(
@@ -42,52 +50,9 @@ export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
   ): ISubscription;
 }
 
-// Error policy.
-
-const errorObject = { e: undefined };
-
-let tryCatch;
-let tryCatchResult;
-
-if (process.env.FALCOR_OBSERVABLE_NO_CATCH) {
-  tryCatch = function dontTryCatch<A, B>(f: (A, B) => void, a: A, b: B): void {
-    f(a, b);
-  };
-
-  tryCatchResult = function dontTryCatchResult<A, B, R>(
-    f: (A, B) => R,
-    a: A,
-    b: B
-  ): R | typeof errorObject {
-    return f(a, b);
-  };
-} else {
-  const throwError = (e: Error) => {
-    throw e;
-  };
-
-  tryCatch = function doTryCatch<A, B>(f: (A, B) => void, a: A, b: B): void {
-    try {
-      f(a, b);
-    } catch (e) {
-      // See https://github.com/ReactiveX/rxjs/issues/3004#issuecomment-339720668
-      setImmediate(throwError, e);
-    }
-  };
-
-  tryCatchResult = function doTryCatchResult<A, B, R>(
-    f: (A, B) => R,
-    a: A,
-    b: B
-  ): R | typeof errorObject {
-    try {
-      return f(a, b);
-    } catch (e) {
-      errorObject.e = e;
-      return errorObject;
-    }
-  };
-}
+export type Operator<T, R, E = Error> = (
+  EsObservable<T, E>
+) => EsObservable<R, E>;
 
 // Functions to be called within tryCatch().
 
@@ -105,7 +70,7 @@ function callError<T, E>(observer: Observer<T, E>, errorValue: E): void {
   }
 }
 
-function callComplete<T, E>(observer: Observer<T, E>, _: void): void {
+function callComplete<T, E>(observer: Observer<T, E>): void {
   const { complete } = observer;
   if (typeof complete === "function") {
     complete.call(observer);
@@ -122,14 +87,7 @@ function callStart<T, E>(
   }
 }
 
-function callSubscriber<T, E>(
-  subscriber: SubscriberFunction<T, E>,
-  subscriptionObserver: ISubscriptionObserver<T, E>
-): Cleanup {
-  return subscriber(subscriptionObserver);
-}
-
-function callCleanup<T, E>(subscription: Subscription<T, E>, _: void) {
+function callCleanup<T, E>(subscription: Subscription<T, E>) {
   const cleanup = subscription._cleanup;
   if (typeof cleanup === "function") {
     subscription._cleanup = undefined;
@@ -198,17 +156,13 @@ class Subscription<T, E = Error> implements ISubscription {
       return;
     }
     const subscriptionObserver = new SubscriptionObserver(this);
-    const subscriberResult = tryCatchResult(
-      callSubscriber,
-      subscriber,
-      subscriptionObserver
-    );
-    if (subscriberResult === errorObject) {
-      subscriptionObserver.error(errorObject.e);
-      errorObject.e = undefined;
+    const subscriberResult = tryCatchResult(subscriber, subscriptionObserver);
+    if (subscriberResult === symbolError) {
+      // XXX implies E must always be Error.
+      subscriptionObserver.error((popError(): any));
       return;
     }
-    const cleanup: Cleanup = (subscriberResult: any);
+    const cleanup: Cleanup = subscriberResult;
     if (cleanup === null || typeof cleanup === "undefined") {
       return;
     }
@@ -262,7 +216,7 @@ class BaseObservable<T, E = Error> {
     });
   }
 
-  static from(obsOrIter: IAdaptsToObservable<T, E> | Iterable<T>): this {
+  static from(obsOrIter: ObservableFrom<T, E>): this {
     if (typeof obsOrIter === "undefined" || obsOrIter === null) {
       throw new TypeError();
     }
@@ -299,6 +253,21 @@ class BaseObservable<T, E = Error> {
     }
 
     throw new TypeError();
+  }
+
+  static fromClassicObservable(classic: IClassicObservable<T, E>): this {
+    if (symbolObservable in classic) {
+      return this.from(classic);
+    }
+    if (typeof classic.subscribe !== "function") {
+      throw new TypeError();
+    }
+    return new this(observer => {
+      const disposable = classic.subscribe(
+        new ClassicFromEsSubscriptionObserver(observer)
+      );
+      return () => disposable.dispose();
+    });
   }
 
   static empty(): this {
@@ -342,11 +311,91 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
     return super.of.call(C, ...values);
   }
 
-  static from(obsOrIter: IAdaptsToObservable<T, E> | Iterable<T>): this {
+  static from(obsOrIter: ObservableFrom<T, E>): this {
     const C = typeof this === "function" ? this : (EsObservable: any);
     return super.from.call(C, obsOrIter);
   }
+
+  pipe: (() => EsObservable<T, E>) &
+    (<R>(op1: Operator<T, R, E>) => EsObservable<R, E>) &
+    (<R1, R2>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>
+    ) => EsObservable<R2, E>) &
+    (<R1, R2, R3>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>
+    ) => EsObservable<R3, E>) &
+    (<R1, R2, R3, R4>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>
+    ) => EsObservable<R4, E>) &
+    (<R1, R2, R3, R4, R5>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>
+    ) => EsObservable<R5, E>) &
+    (<R1, R2, R3, R4, R5, R6>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>
+    ) => EsObservable<R6, E>) &
+    (<R1, R2, R3, R4, R5, R6, R7>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>,
+      op7: Operator<R6, R7, E>
+    ) => EsObservable<R7, E>) &
+    (<R1, R2, R3, R4, R5, R6, R7, R8>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>,
+      op7: Operator<R6, R7, E>,
+      op8: Operator<R7, R8, E>
+    ) => EsObservable<R8, E>) &
+    (<R1, R2, R3, R4, R5, R6, R7, R8, R9>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>,
+      op7: Operator<R6, R7, E>,
+      op8: Operator<R7, R8, E>,
+      op9: Operator<R8, R9, E>
+    ) => EsObservable<R9, E>) &
+    (<R1, R2, R3, R4, R5, R6, R7, R8, R9, R10>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>,
+      op7: Operator<R6, R7, E>,
+      op8: Operator<R7, R8, E>,
+      op9: Operator<R8, R9, E>,
+      op10: Operator<R9, R10, E>
+    ) => EsObservable<R10, E>) &
+    (<R>(operators: Operator<T, R, E>) => EsObservable<R, E>);
 }
+
+EsObservable.prototype.pipe = (function pipe(...operators) {
+  return operators.reduce((acc, curr) => curr(acc), this);
+}: any);
 
 module.exports = {
   BaseObservable,

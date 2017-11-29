@@ -3,7 +3,7 @@
 An Observable implementation compatible with the Falcor DataSource API.
 
 Unless you are implementing a Falcor DataSource you will likely be better
-served by the more fully featured [RxJS]. 
+served by the more fully featured [RxJS].
 
 ## Error handling policy
 
@@ -46,6 +46,24 @@ rxobs.subscribe({
     console.log("next", value);
   }
 });
+```
+
+## Applying operators to an Observable
+
+The `pipe` instance method can be used to apply operators to an Observable.
+
+```js
+const { Observable, operators: { map } } = require("falcor-observable");
+
+Observable.of(1,2,3)
+  .pipe(
+    map(x => x + 1),
+    map(x => x + 1))
+  .subscribe({
+    onNext(value) {
+      console.log("onNext", value);
+    }
+  });
 ```
 
 [RxJS]: https://www.npmjs.com/package/rxjs

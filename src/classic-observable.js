@@ -1,5 +1,4 @@
 // @flow
-/* eslint-disable no-undefined */
 "use strict";
 
 const symbolObservable = require("symbol-observable").default;
@@ -8,12 +7,13 @@ const {
   Observable: EsObservable,
   Subscription
 } = require("./es-observable");
+const { ClassicFromEsSubscriptionObserver } = require("./classic-observer");
 
 import type {
   IAdaptsToObservable,
   IObservable,
-  ISubscriptionObserver,
-  ISubscription
+  ISubscription,
+  Operator
 } from "./es-observable";
 
 export interface IDisposable {
@@ -76,27 +76,6 @@ class EsFromClassicObserver<T, E = Error> {
   }
 }
 
-// XXX Should these go directly on SubscriptionObserver?
-class ClassicFromEsSubscriptionObserver<T, E = Error>
-  implements IClassicSubscriptionObserver<T, E> {
-  _observer: ISubscriptionObserver<T, E>;
-  constructor(observer: ISubscriptionObserver<T, E>): void {
-    this._observer = observer;
-  }
-  onNext(value: T): void {
-    this._observer.next(value);
-  }
-  onError(errorValue: E): void {
-    this._observer.error(errorValue);
-  }
-  onCompleted(): void {
-    this._observer.complete();
-  }
-  get isStopped(): boolean {
-    return this._observer.closed;
-  }
-}
-
 // XXX Should these go directly on Subscription?
 class DisposableFromSubscription implements IDisposable {
   _subscription: ISubscription;
@@ -155,6 +134,88 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
       return ({ unsubscribe: cleanup.dispose }: any);
     });
   }
+
+  pipe: (() => ClassicObservable<T, E>) &
+    (<R>(op1: Operator<T, R, E>) => ClassicObservable<R, E>) &
+    (<R1, R2>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>
+    ) => ClassicObservable<R2, E>) &
+    (<R1, R2, R3>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>
+    ) => ClassicObservable<R3, E>) &
+    (<R1, R2, R3, R4>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>
+    ) => ClassicObservable<R4, E>) &
+    (<R1, R2, R3, R4, R5>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>
+    ) => ClassicObservable<R5, E>) &
+    (<R1, R2, R3, R4, R5, R6>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>
+    ) => ClassicObservable<R6, E>) &
+    (<R1, R2, R3, R4, R5, R6, R7>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>,
+      op7: Operator<R6, R7, E>
+    ) => ClassicObservable<R7, E>) &
+    (<R1, R2, R3, R4, R5, R6, R7, R8>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>,
+      op7: Operator<R6, R7, E>,
+      op8: Operator<R7, R8, E>
+    ) => ClassicObservable<R8, E>) &
+    (<R1, R2, R3, R4, R5, R6, R7, R8, R9>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>,
+      op7: Operator<R6, R7, E>,
+      op8: Operator<R7, R8, E>,
+      op9: Operator<R8, R9, E>
+    ) => ClassicObservable<R9, E>) &
+    (<R1, R2, R3, R4, R5, R6, R7, R8, R9, R10>(
+      op1: Operator<T, R1, E>,
+      op2: Operator<R1, R2, E>,
+      op3: Operator<R2, R3, E>,
+      op4: Operator<R3, R4, E>,
+      op5: Operator<R4, R5, E>,
+      op6: Operator<R5, R6, E>,
+      op7: Operator<R6, R7, E>,
+      op8: Operator<R7, R8, E>,
+      op9: Operator<R8, R9, E>,
+      op10: Operator<R9, R10, E>
+    ) => ClassicObservable<R10, E>) &
+    (<R>(operators: Operator<T, R, E>) => ClassicObservable<R, E>);
 }
+
+ClassicObservable.prototype.pipe = (function pipe(...operators) {
+  return ClassicObservable.from(
+    operators.reduce((acc, curr) => curr(acc), this[symbolObservable]())
+  );
+}: any);
 
 module.exports = { Observable: ClassicObservable };
