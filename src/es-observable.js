@@ -1,8 +1,13 @@
 // @flow
-/* eslint-disable no-undefined */
 "use strict";
 
 const symbolObservable = require("symbol-observable").default;
+const {
+  tryCatch,
+  tryCatchResult,
+  symbolError,
+  popError
+} = require("./try-catch");
 const { ClassicFromEsSubscriptionObserver } = require("./classic-observer");
 import type { IClassicObservable } from "./classic-observable";
 
@@ -45,53 +50,6 @@ export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
   ): ISubscription;
 }
 
-// Error policy.
-
-const errorObject = { e: undefined };
-
-let tryCatch;
-let tryCatchResult;
-
-if (process.env.FALCOR_OBSERVABLE_NO_CATCH) {
-  tryCatch = function dontTryCatch<A, B>(f: (A, B) => void, a: A, b: B): void {
-    f(a, b);
-  };
-
-  tryCatchResult = function dontTryCatchResult<A, B, R>(
-    f: (A, B) => R,
-    a: A,
-    b: B
-  ): R | typeof errorObject {
-    return f(a, b);
-  };
-} else {
-  const throwError = (e: Error) => {
-    throw e;
-  };
-
-  tryCatch = function doTryCatch<A, B>(f: (A, B) => void, a: A, b: B): void {
-    try {
-      f(a, b);
-    } catch (e) {
-      // See https://github.com/ReactiveX/rxjs/issues/3004#issuecomment-339720668
-      setImmediate(throwError, e);
-    }
-  };
-
-  tryCatchResult = function doTryCatchResult<A, B, R>(
-    f: (A, B) => R,
-    a: A,
-    b: B
-  ): R | typeof errorObject {
-    try {
-      return f(a, b);
-    } catch (e) {
-      errorObject.e = e;
-      return errorObject;
-    }
-  };
-}
-
 // Functions to be called within tryCatch().
 
 function callNext<T, E>(observer: Observer<T, E>, value: T): void {
@@ -108,7 +66,7 @@ function callError<T, E>(observer: Observer<T, E>, errorValue: E): void {
   }
 }
 
-function callComplete<T, E>(observer: Observer<T, E>, _: void): void {
+function callComplete<T, E>(observer: Observer<T, E>): void {
   const { complete } = observer;
   if (typeof complete === "function") {
     complete.call(observer);
@@ -125,14 +83,7 @@ function callStart<T, E>(
   }
 }
 
-function callSubscriber<T, E>(
-  subscriber: SubscriberFunction<T, E>,
-  subscriptionObserver: ISubscriptionObserver<T, E>
-): Cleanup {
-  return subscriber(subscriptionObserver);
-}
-
-function callCleanup<T, E>(subscription: Subscription<T, E>, _: void) {
+function callCleanup<T, E>(subscription: Subscription<T, E>) {
   const cleanup = subscription._cleanup;
   if (typeof cleanup === "function") {
     subscription._cleanup = undefined;
@@ -201,17 +152,13 @@ class Subscription<T, E = Error> implements ISubscription {
       return;
     }
     const subscriptionObserver = new SubscriptionObserver(this);
-    const subscriberResult = tryCatchResult(
-      callSubscriber,
-      subscriber,
-      subscriptionObserver
-    );
-    if (subscriberResult === errorObject) {
-      subscriptionObserver.error(errorObject.e);
-      errorObject.e = undefined;
+    const subscriberResult = tryCatchResult(subscriber, subscriptionObserver);
+    if (subscriberResult === symbolError) {
+      // XXX implies E must always be Error.
+      subscriptionObserver.error((popError(): any));
       return;
     }
-    const cleanup: Cleanup = (subscriberResult: any);
+    const cleanup: Cleanup = subscriberResult;
     if (cleanup === null || typeof cleanup === "undefined") {
       return;
     }
