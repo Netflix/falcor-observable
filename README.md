@@ -53,7 +53,7 @@ rxobs.subscribe({
 The `pipe` instance method can be used to apply operators to an Observable.
 
 ```js
-const { Observable, operators: { map } } = require("falcor-observable");
+const { Observable,  map } = require("falcor-observable");
 
 Observable.of(1,2,3)
   .pipe(
