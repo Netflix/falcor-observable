@@ -1,7 +1,6 @@
 // @flow
 "use strict";
-const { Observable } = require("../src/classic-observable");
-const { map } = require("../src/operators/map");
+const { Observable, map } = require("../src");
 const { expect } = require("chai");
 const { stub } = require("sinon");
 
