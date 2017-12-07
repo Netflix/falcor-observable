@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.1"></a>
+## [1.0.1](https://github.com/Netflix/falcor-observable/compare/v1.0.0...v1.0.1) (2017-12-07)
+
+
+### Bug Fixes
+
+* named export typo. ([12e5caf](https://github.com/Netflix/falcor-observable/commit/12e5caf))
+
+
+
 <a name="1.0.0"></a>
 # [1.0.0](https://github.com/Netflix/falcor-observable/compare/v0.4.0...v1.0.0) (2017-12-07)
 
