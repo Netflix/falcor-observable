@@ -9,7 +9,5 @@ export type {
   IClassicSubscriptionObserver as IObserver
 } from "./classic-observer";
 
-const { Observable } = require("./classic-observable");
-const operators = require("./operators");
-
-module.exports = { Observable, operators };
+module.exports.Operators = require("./classic-observable").Observable;
+module.exports.map = require("./operators/map").map;
