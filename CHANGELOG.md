@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.0"></a>
+# [1.0.0](https://github.com/Netflix/falcor-observable/compare/v0.4.0...v1.0.0) (2017-12-07)
+
+
+### Features
+
+* export pipeable operators directly from root module. ([5a931c0](https://github.com/Netflix/falcor-observable/commit/5a931c0))
+
+
+### BREAKING CHANGES
+
+* pipeable operators are no longer nested under 'operators'.
+
+
+
 <a name="0.4.0"></a>
 # [0.4.0](https://github.com/Netflix/falcor-observable/compare/v0.3.1...v0.4.0) (2017-11-29)
 
