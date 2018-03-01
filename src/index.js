@@ -11,3 +11,4 @@ export type {
 
 module.exports.Observable = require("./classic-observable").Observable;
 module.exports.map = require("./operators/map").map;
+module.exports.reduce = require("./operators/reduce").reduce;
