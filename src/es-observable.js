@@ -40,7 +40,9 @@ export interface IAdaptsToObservable<T, E = Error> {
   // Flow cannot parse computed properties.
   //[symbolObservable](): IObservable<T, E>
 }
-type ObservableFrom<T, E> = IAdaptsToObservable<T, E> | Iterable<T>;
+export type ObservableInput<T, E = Error> =
+  | IAdaptsToObservable<T, E>
+  | Iterable<T>;
 
 export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
   subscribe(
@@ -216,7 +218,7 @@ class BaseObservable<T, E = Error> {
     });
   }
 
-  static from(obsOrIter: ObservableFrom<T, E>): this {
+  static from(obsOrIter: ObservableInput<T, E>): this {
     if (typeof obsOrIter === "undefined" || obsOrIter === null) {
       throw new TypeError();
     }
@@ -311,7 +313,7 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
     return super.of.call(C, ...values);
   }
 
-  static from(obsOrIter: ObservableFrom<T, E>): this {
+  static from(obsOrIter: ObservableInput<T, E>): this {
     const C = typeof this === "function" ? this : (EsObservable: any);
     return super.from.call(C, obsOrIter);
   }
