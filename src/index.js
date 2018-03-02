@@ -18,3 +18,4 @@ module.exports.mergeMap = require("./operators/mergeMap").mergeMap;
 module.exports.mergeAll = require("./operators/mergeAll").mergeAll;
 module.exports.expand = require("./operators/expand").expand;
 module.exports.tap = require("./operators/tap").tap;
+module.exports.concat = require("./operators/concat").concat;
