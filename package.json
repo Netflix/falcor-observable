@@ -35,7 +35,7 @@
     "chai": "^4.0.2",
     "es-observable": "github:lrowe/proposal-observable#2989c4a",
     "eslint": "^4.10.0",
-    "flow-bin": "^0.58.0",
+    "flow-bin": "^0.66.0",
     "flow-coverage-report": "^0.4.0",
     "flow-remove-types": "^1.2.3",
     "mocha": "^4.0.1",
