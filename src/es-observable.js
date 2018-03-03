@@ -40,7 +40,9 @@ export interface IAdaptsToObservable<T, E = Error> {
   // Flow cannot parse computed properties.
   //[symbolObservable](): IObservable<T, E>
 }
-type ObservableFrom<T, E> = IAdaptsToObservable<T, E> | Iterable<T>;
+export type ObservableInput<T, E = Error> =
+  | IAdaptsToObservable<T, E>
+  | Iterable<T>;
 
 export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
   subscribe(
@@ -50,7 +52,7 @@ export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
   ): ISubscription;
 }
 
-export type Operator<T, R, E = Error> = (
+export type OperatorFunction<T, R, E = Error> = (
   EsObservable<T, E>
 ) => EsObservable<R, E>;
 
@@ -216,7 +218,7 @@ class BaseObservable<T, E = Error> {
     });
   }
 
-  static from(obsOrIter: ObservableFrom<T, E>): this {
+  static from(obsOrIter: ObservableInput<T, E>): this {
     if (typeof obsOrIter === "undefined" || obsOrIter === null) {
       throw new TypeError();
     }
@@ -311,86 +313,86 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
     return super.of.call(C, ...values);
   }
 
-  static from(obsOrIter: ObservableFrom<T, E>): this {
+  static from(obsOrIter: ObservableInput<T, E>): this {
     const C = typeof this === "function" ? this : (EsObservable: any);
     return super.from.call(C, obsOrIter);
   }
 
   pipe: (() => EsObservable<T, E>) &
-    (<R>(op1: Operator<T, R, E>) => EsObservable<R, E>) &
+    (<R>(op1: OperatorFunction<T, R, E>) => EsObservable<R, E>) &
     (<R1, R2>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>
     ) => EsObservable<R2, E>) &
     (<R1, R2, R3>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>,
-      op3: Operator<R2, R3, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>,
+      op3: OperatorFunction<R2, R3, E>
     ) => EsObservable<R3, E>) &
     (<R1, R2, R3, R4>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>,
-      op3: Operator<R2, R3, E>,
-      op4: Operator<R3, R4, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>,
+      op3: OperatorFunction<R2, R3, E>,
+      op4: OperatorFunction<R3, R4, E>
     ) => EsObservable<R4, E>) &
     (<R1, R2, R3, R4, R5>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>,
-      op3: Operator<R2, R3, E>,
-      op4: Operator<R3, R4, E>,
-      op5: Operator<R4, R5, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>,
+      op3: OperatorFunction<R2, R3, E>,
+      op4: OperatorFunction<R3, R4, E>,
+      op5: OperatorFunction<R4, R5, E>
     ) => EsObservable<R5, E>) &
     (<R1, R2, R3, R4, R5, R6>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>,
-      op3: Operator<R2, R3, E>,
-      op4: Operator<R3, R4, E>,
-      op5: Operator<R4, R5, E>,
-      op6: Operator<R5, R6, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>,
+      op3: OperatorFunction<R2, R3, E>,
+      op4: OperatorFunction<R3, R4, E>,
+      op5: OperatorFunction<R4, R5, E>,
+      op6: OperatorFunction<R5, R6, E>
     ) => EsObservable<R6, E>) &
     (<R1, R2, R3, R4, R5, R6, R7>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>,
-      op3: Operator<R2, R3, E>,
-      op4: Operator<R3, R4, E>,
-      op5: Operator<R4, R5, E>,
-      op6: Operator<R5, R6, E>,
-      op7: Operator<R6, R7, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>,
+      op3: OperatorFunction<R2, R3, E>,
+      op4: OperatorFunction<R3, R4, E>,
+      op5: OperatorFunction<R4, R5, E>,
+      op6: OperatorFunction<R5, R6, E>,
+      op7: OperatorFunction<R6, R7, E>
     ) => EsObservable<R7, E>) &
     (<R1, R2, R3, R4, R5, R6, R7, R8>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>,
-      op3: Operator<R2, R3, E>,
-      op4: Operator<R3, R4, E>,
-      op5: Operator<R4, R5, E>,
-      op6: Operator<R5, R6, E>,
-      op7: Operator<R6, R7, E>,
-      op8: Operator<R7, R8, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>,
+      op3: OperatorFunction<R2, R3, E>,
+      op4: OperatorFunction<R3, R4, E>,
+      op5: OperatorFunction<R4, R5, E>,
+      op6: OperatorFunction<R5, R6, E>,
+      op7: OperatorFunction<R6, R7, E>,
+      op8: OperatorFunction<R7, R8, E>
     ) => EsObservable<R8, E>) &
     (<R1, R2, R3, R4, R5, R6, R7, R8, R9>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>,
-      op3: Operator<R2, R3, E>,
-      op4: Operator<R3, R4, E>,
-      op5: Operator<R4, R5, E>,
-      op6: Operator<R5, R6, E>,
-      op7: Operator<R6, R7, E>,
-      op8: Operator<R7, R8, E>,
-      op9: Operator<R8, R9, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>,
+      op3: OperatorFunction<R2, R3, E>,
+      op4: OperatorFunction<R3, R4, E>,
+      op5: OperatorFunction<R4, R5, E>,
+      op6: OperatorFunction<R5, R6, E>,
+      op7: OperatorFunction<R6, R7, E>,
+      op8: OperatorFunction<R7, R8, E>,
+      op9: OperatorFunction<R8, R9, E>
     ) => EsObservable<R9, E>) &
     (<R1, R2, R3, R4, R5, R6, R7, R8, R9, R10>(
-      op1: Operator<T, R1, E>,
-      op2: Operator<R1, R2, E>,
-      op3: Operator<R2, R3, E>,
-      op4: Operator<R3, R4, E>,
-      op5: Operator<R4, R5, E>,
-      op6: Operator<R5, R6, E>,
-      op7: Operator<R6, R7, E>,
-      op8: Operator<R7, R8, E>,
-      op9: Operator<R8, R9, E>,
-      op10: Operator<R9, R10, E>
+      op1: OperatorFunction<T, R1, E>,
+      op2: OperatorFunction<R1, R2, E>,
+      op3: OperatorFunction<R2, R3, E>,
+      op4: OperatorFunction<R3, R4, E>,
+      op5: OperatorFunction<R4, R5, E>,
+      op6: OperatorFunction<R5, R6, E>,
+      op7: OperatorFunction<R6, R7, E>,
+      op8: OperatorFunction<R7, R8, E>,
+      op9: OperatorFunction<R8, R9, E>,
+      op10: OperatorFunction<R9, R10, E>
     ) => EsObservable<R10, E>) &
-    (<R>(operators: Operator<T, R, E>) => EsObservable<R, E>);
+    (<R>(operators: OperatorFunction<T, R, E>) => EsObservable<R, E>);
 }
 
 EsObservable.prototype.pipe = (function pipe(...operators) {
