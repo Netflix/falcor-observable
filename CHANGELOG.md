@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.1.0"></a>
+# [1.1.0](https://github.com/Netflix/falcor-observable/compare/v1.0.1...v1.1.0) (2018-03-03)
+
+
+### Bug Fixes
+
+* Flow annotation for map operator. ([e52e67e](https://github.com/Netflix/falcor-observable/commit/e52e67e))
+
+
+### Features
+
+* mergeMap, mergeAll, concatMap, concatAll ([03e3c2a](https://github.com/Netflix/falcor-observable/commit/03e3c2a))
+* reduce operator. ([c249c48](https://github.com/Netflix/falcor-observable/commit/c249c48))
+
+
+
 <a name="1.0.1"></a>
 ## [1.0.1](https://github.com/Netflix/falcor-observable/compare/v1.0.0...v1.0.1) (2017-12-07)
 
