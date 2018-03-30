@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.1.2"></a>
+## [1.1.2](https://github.com/Netflix/falcor-observable/compare/v1.1.1...v1.1.2) (2018-03-30)
+
+
+### Bug Fixes
+
+* Silence Flow error with updated Flow version. ([39fcf56](https://github.com/Netflix/falcor-observable/commit/39fcf56))
+
+
+
 <a name="1.1.1"></a>
 ## [1.1.1](https://github.com/Netflix/falcor-observable/compare/v1.1.0...v1.1.1) (2018-03-07)
 
