@@ -232,7 +232,7 @@ class BaseObservable<T, E = Error> {
         if (typeof observable !== "object" || observable === null) {
           throw new TypeError();
         }
-        if (observable.constructor === this) {
+        if ((observable: any).constructor === this) {
           return (observable: any);
         }
         // Avoid additional wrapping between compatible observable implementations.
