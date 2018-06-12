@@ -8,6 +8,7 @@ const {
   Subscription
 } = require("./es-observable");
 const { ClassicFromEsSubscriptionObserver } = require("./classic-observer");
+const { tryCatchResult, symbolError, popError } = require("./try-catch");
 
 import type {
   IAdaptsToObservable,
@@ -132,6 +133,17 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
       }
       // Will cause constructor to throw
       return ({ unsubscribe: cleanup.dispose }: any);
+    });
+  }
+
+  static defer(factory: () => this): this {
+    return new this(observer => {
+      const result = tryCatchResult(factory);
+      if (result === symbolError) {
+        return observer.error((popError(): any));
+      }
+
+      return EsObservable.fromClassicObservable(result).subscribe(observer);
     });
   }
 

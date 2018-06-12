@@ -318,6 +318,17 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
     return super.from.call(C, obsOrIter);
   }
 
+  static defer(factory: () => this): this {
+    return new this(observer => {
+      const result = tryCatchResult(factory);
+      if (result === symbolError) {
+        return observer.error((popError(): any));
+      }
+
+      return this.fromClassicObservable(result).subscribe(observer);
+    });
+  }
+
   pipe: (() => EsObservable<T, E>) &
     (<R>(op1: OperatorFunction<T, R, E>) => EsObservable<R, E>) &
     (<R1, R2>(
