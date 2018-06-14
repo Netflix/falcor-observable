@@ -136,7 +136,7 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
     });
   }
 
-  static defer(factory: () => this): this {
+  static defer(factory: () => ClassicObservable<T, E>): this {
     return new this(observer => {
       const result = tryCatchResult(factory);
       if (result === symbolError) {

@@ -318,7 +318,7 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
     return super.from.call(C, obsOrIter);
   }
 
-  static defer(factory: () => this): this {
+  static defer(factory: () => EsObservable<T, E>): this {
     return new this(observer => {
       const result = tryCatchResult(factory);
       if (result === symbolError) {
