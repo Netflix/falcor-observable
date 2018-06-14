@@ -31,9 +31,9 @@
     "symbol-observable": "^1.0.4"
   },
   "devDependencies": {
+    "@lrowe/es-observable": "^0.3.0",
     "@lrowe/eslint-plugin-flow-remove-types": "^0.0.1",
     "chai": "^4.0.2",
-    "es-observable": "github:lrowe/proposal-observable#2989c4a",
     "eslint": "^4.10.0",
     "flow-bin": "^0.69.0",
     "flow-coverage-report": "^0.4.0",
