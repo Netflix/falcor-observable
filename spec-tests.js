@@ -1,6 +1,6 @@
 "use strict";
 const { Observable } = require("./src/es-observable.js");
-const { runTests } = require("es-observable/commonjs/test/default.js");
+const { runTests } = require("@lrowe/es-observable/commonjs/test/default.js");
 
 process.on("uncaughtException", err => {
   // Errors thrown by the spec tests have no message, rethrow anything else.
