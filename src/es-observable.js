@@ -405,7 +405,7 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
       op9: OperatorFunction<R8, R9, E>,
       op10: OperatorFunction<R9, R10, E>
     ) => EsObservable<R10, E>) &
-    (<R>(operators: OperatorFunction<T, R, E>) => EsObservable<R, E>);
+    (<R>(...operators: OperatorFunction<T, R, E>[]) => EsObservable<R, E>);
 }
 
 EsObservable.prototype.pipe = (function pipe(...operators) {
