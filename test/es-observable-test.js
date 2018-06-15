@@ -100,4 +100,22 @@ describe("ES Observable", function() {
       expect(complete.calledOnce).equal(true);
     });
   });
+
+  describe("defer", function() {
+    it("defers", function() {
+      const next = stub();
+      const error = stub();
+      const complete = stub();
+
+      Observable.defer(() => Observable.of(0, 1, 2)).subscribe({
+        next,
+        error,
+        complete
+      });
+
+      expect(next.args).to.deep.equal([[0], [1], [2]]);
+      expect(error.called).equal(false);
+      expect(complete.calledOnce).equal(true);
+    });
+  });
 });

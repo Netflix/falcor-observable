@@ -283,6 +283,14 @@ class BaseObservable<T, E = Error> {
       observer.error(errorValue);
     });
   }
+
+  static defer(factory: () => ObservableInput<T, E>): this {
+    return new this(observer => {
+      const result = factory();
+      const obs = this.from(result);
+      return new Subscription(obs._subscriber, observer);
+    });
+  }
 }
 
 class EsObservable<T, E = Error> extends BaseObservable<T, E>
@@ -316,6 +324,11 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
   static from(obsOrIter: ObservableInput<T, E>): this {
     const C = typeof this === "function" ? this : (EsObservable: any);
     return super.from.call(C, obsOrIter);
+  }
+
+  static defer(factory: () => ObservableInput<T, E>): this {
+    const C = typeof this === "function" ? this : (EsObservable: any);
+    return super.defer.call(C, factory);
   }
 
   pipe: (() => EsObservable<T, E>) &

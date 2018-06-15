@@ -99,4 +99,22 @@ describe("Classic Observable", function() {
       expect(onCompleted.calledOnce).equal(true);
     });
   });
+
+  describe("defer", function() {
+    it("defers", function() {
+      const onNext = stub();
+      const onError = stub();
+      const onCompleted = stub();
+
+      Observable.defer(() => Observable.of(0, 1, 2)).subscribe({
+        onNext,
+        onError,
+        onCompleted
+      });
+
+      expect(onNext.args).to.deep.equal([[0], [1], [2]]);
+      expect(onError.called).equal(false);
+      expect(onCompleted.calledOnce).equal(true);
+    });
+  });
 });
