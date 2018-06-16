@@ -6,90 +6,14 @@ import type {
   OperatorFunction,
   ISubscription,
   ISubscriptionObserver
-} from "../es-observable.js";
-const { Observable } = require("../es-observable.js");
+} from "../es-observable";
+import type { IOuterSubscriber } from "../subscriber";
+const { Observable } = require("../es-observable");
 const { tryCatchResult, symbolError, popError } = require("../try-catch");
+const { projectToObservable } = require("../project");
+const { InnerSubscriber } = require("../subscriber");
 
-interface ISubscriber<T, E = Error>
-  extends ISubscription, ISubscriptionObserver<T, E> {}
-
-interface IOuterSubscriber<T, R, E = Error> extends ISubscriber<T, E> {
-  notifyNext(
-    outerValue: T,
-    innerValue: R,
-    outerIndex: number,
-    innerIndex: number,
-    innerSub: InnerSubscriber<T, R, E>
-  ): void;
-  notifyError(e: E, innerSub: InnerSubscriber<T, R, E>): void;
-  notifyComplete(innerSub: InnerSubscriber<T, R, E>): void;
-}
-
-class InnerSubscriber<T, R, E = Error> implements ISubscriber<R, E> {
-  parent: IOuterSubscriber<T, R, E>;
-  outerValue: T;
-  outerIndex: number;
-  index: number;
-  closed: boolean;
-  subscription: ISubscription | null;
-  constructor(
-    parent: IOuterSubscriber<T, R, E>,
-    outerValue: T,
-    outerIndex: number
-  ): void {
-    this.parent = parent;
-    this.outerValue = outerValue;
-    this.outerIndex = outerIndex;
-    this.index = 0;
-    this.closed = false;
-    this.subscription = null;
-  }
-  start(subscription: ISubscription): void {
-    this.subscription = subscription;
-  }
-  next(value: R): void {
-    this.parent.notifyNext(
-      this.outerValue,
-      value,
-      this.outerIndex,
-      this.index++,
-      this
-    );
-  }
-  error(err: E): void {
-    this.parent.notifyError(err, this);
-    this.closed = true;
-  }
-  complete(): void {
-    this.parent.notifyComplete(this);
-    this.closed = true;
-  }
-  unsubscribe(): void {
-    if (this.closed) {
-      return;
-    }
-    const { subscription } = this;
-    if (subscription !== null) {
-      subscription.unsubscribe();
-    }
-    this.closed = true;
-  }
-}
-
-function projectToObservable(project, v, i) {
-  const result =
-    typeof project === "function" ? tryCatchResult(project, v, i) : v;
-  if (result === symbolError) {
-    return Observable.throw((popError(): any));
-  }
-  const obs = tryCatchResult(Observable.from, result);
-  if (obs === symbolError) {
-    return Observable.throw((popError(): any));
-  }
-  return obs;
-}
-
-class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, R, E> {
+class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, I, E> {
   destination: ISubscriptionObserver<R, E>;
   project: ?(value: T, i: number) => ObservableInput<I, E>;
   resultSelector: ?(
@@ -99,7 +23,7 @@ class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, R, E> {
     innerIndex: number
   ) => ObservableInput<R, E>;
   concurrent: number;
-  innerSubs: Set<InnerSubscriber<T, R, E>>;
+  innerSubs: Set<InnerSubscriber<T, I, E>>;
   buffer: T[];
   index: number;
   active: number;
@@ -165,14 +89,14 @@ class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, R, E> {
   }
   notifyNext(
     outerValue: T,
-    innerValue: R,
+    innerValue: I,
     outerIndex: number,
     innerIndex: number,
-    innerSub: InnerSubscriber<T, R, E>
+    innerSub: InnerSubscriber<T, I, E>
   ): void {
     const { resultSelector } = this;
     if (typeof resultSelector !== "function") {
-      this.destination.next(innerValue);
+      this.destination.next((innerValue: any));
       return;
     }
     const result = tryCatchResult(
@@ -188,11 +112,11 @@ class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, R, E> {
     }
     this.destination.next(result);
   }
-  notifyError(e: E, innerSub: InnerSubscriber<T, R, E>): void {
+  notifyError(e: E, innerSub: InnerSubscriber<T, I, E>): void {
     this.destination.error(e);
     this.innerSubs.delete(innerSub);
   }
-  notifyComplete(innerSub: InnerSubscriber<T, R, E>): void {
+  notifyComplete(innerSub: InnerSubscriber<T, I, E>): void {
     this.active--;
     this.innerSubs.delete(innerSub);
     if (this.buffer.length !== 0) {
