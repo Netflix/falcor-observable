@@ -5,7 +5,7 @@ const { expect } = require("chai");
 const { spy, stub } = require("sinon");
 const { reduce } = require("../src");
 
-describe("reduce function", function() {
+describe("reduce operator", function() {
   it("with seed", function() {
     const observable = Observable.of(0, 1, 2);
     const observer = {

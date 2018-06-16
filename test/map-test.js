@@ -5,7 +5,7 @@ const { expect } = require("chai");
 const { spy, stub } = require("sinon");
 const { map } = require("../src");
 
-describe("map function", function() {
+describe("map operator", function() {
   it("transforms values", function() {
     const observable = Observable.of(0, 1, 2);
     const observer = {
