@@ -9,21 +9,14 @@ import type {
 } from "../es-observable";
 import type { IOuterSubscriber } from "../subscriber";
 const { Observable } = require("../es-observable");
-const { tryCatchResult, symbolError, popError } = require("../try-catch");
 const { projectToObservable } = require("../project");
 const { InnerSubscriber } = require("../subscriber");
 
-class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, I, E> {
-  destination: ISubscriptionObserver<R, E>;
-  project: ?(value: T, i: number) => ObservableInput<I, E>;
-  resultSelector: ?(
-    outerValue: T,
-    innerValue: I,
-    outerIndex: number,
-    innerIndex: number
-  ) => ObservableInput<R, E>;
+class ExpandSubscriber<T, E> implements IOuterSubscriber<T, T, E> {
+  destination: ISubscriptionObserver<T, E>;
+  project: (value: T, i: number) => ObservableInput<T, E>;
   concurrent: number;
-  innerSubs: Set<InnerSubscriber<T, I, E>>;
+  innerSubs: Set<InnerSubscriber<T, T, E>>;
   buffer: T[];
   index: number;
   active: number;
@@ -32,19 +25,12 @@ class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, I, E> {
   subscription: ISubscription | null;
 
   constructor(
-    destination: ISubscriptionObserver<R, E>,
-    project: ?(value: T, i: number) => ObservableInput<I, E>,
-    resultSelector: ?(
-      outerValue: T,
-      innerValue: I,
-      outerIndex: number,
-      innerIndex: number
-    ) => ObservableInput<R, E>,
+    destination: ISubscriptionObserver<T, E>,
+    project: (value: T, i: number) => ObservableInput<T, E>,
     concurrent: number
   ): void {
     this.destination = destination;
     this.project = project;
-    this.resultSelector = resultSelector;
     this.concurrent = concurrent;
     this.innerSubs = new Set();
     this.buffer = [];
@@ -80,6 +66,7 @@ class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, I, E> {
     }
   }
   projectTo(value: T): void {
+    this.destination.next(value);
     const i = this.index++;
     const obs = projectToObservable(this.project, value, i);
     const innerSub = new InnerSubscriber(this, value, i);
@@ -89,34 +76,18 @@ class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, I, E> {
   }
   notifyNext(
     outerValue: T,
-    innerValue: I,
+    innerValue: T,
     outerIndex: number,
     innerIndex: number,
-    innerSub: InnerSubscriber<T, I, E>
+    innerSub: InnerSubscriber<T, T, E>
   ): void {
-    const { resultSelector } = this;
-    if (typeof resultSelector !== "function") {
-      this.destination.next((innerValue: any));
-      return;
-    }
-    const result = tryCatchResult(
-      resultSelector,
-      outerValue,
-      innerValue,
-      outerIndex,
-      innerIndex
-    );
-    if (result === symbolError) {
-      this.destination.error((popError(): any));
-      return;
-    }
-    this.destination.next(result);
+    this.next(innerValue);
   }
-  notifyError(e: E, innerSub: InnerSubscriber<T, I, E>): void {
+  notifyError(e: E, innerSub: InnerSubscriber<T, T, E>): void {
     this.destination.error(e);
     this.innerSubs.delete(innerSub);
   }
-  notifyComplete(innerSub: InnerSubscriber<T, I, E>): void {
+  notifyComplete(innerSub: InnerSubscriber<T, T, E>): void {
     this.active--;
     this.innerSubs.delete(innerSub);
     if (this.buffer.length !== 0) {
@@ -141,50 +112,17 @@ class MergeMapSubscriber<T, I, R, E> implements IOuterSubscriber<T, I, E> {
   }
 }
 
-function _mergeMap<T, I, R, E>(
-  project: ?(value: T, i: number) => ObservableInput<I, E>,
-  resultSelector: ?(
-    outerValue: T,
-    innerValue: I,
-    outerIndex: number,
-    innerIndex: number
-  ) => ObservableInput<R, E>,
+function expand<T, E>(
+  project: (value: T, i: number) => ObservableInput<T, E>,
   concurrent: number = Number.POSITIVE_INFINITY
 ): any {
-  return function mergeMapOperator(source) {
+  return function expandOperator(source) {
     return new Observable(observer => {
-      const sub = new MergeMapSubscriber(
-        observer,
-        project,
-        resultSelector,
-        concurrent
-      );
+      const sub = new ExpandSubscriber(observer, project, concurrent);
       source.subscribe(sub);
       return sub;
     });
   };
 }
 
-declare function mergeMap<T, R, E>(
-  project: (value: T, i: number) => ObservableInput<R, E>,
-  concurrent?: number
-): OperatorFunction<T, R, E>;
-
-declare function mergeMap<T, I, R, E>(
-  project: (value: T, i: number) => ObservableInput<I, E>,
-  resultSelector: (
-    outerValue: T,
-    innerValue: I,
-    outerIndex: number,
-    innerIndex: number
-  ) => ObservableInput<R, E>,
-  concurrent?: number
-): OperatorFunction<T, R, E>;
-
-function mergeMap(project, resultSelector, concurrent) {
-  return typeof resultSelector === "number"
-    ? _mergeMap(project, null, resultSelector)
-    : _mergeMap(project, resultSelector, concurrent);
-}
-
-module.exports = { mergeMap, _mergeMap };
+module.exports = { expand };
