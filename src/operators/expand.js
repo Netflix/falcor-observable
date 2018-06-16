@@ -115,7 +115,7 @@ class ExpandSubscriber<T, E> implements IOuterSubscriber<T, T, E> {
 function expand<T, E>(
   project: (value: T, i: number) => ObservableInput<T, E>,
   concurrent: number = Number.POSITIVE_INFINITY
-): any {
+): OperatorFunction<T, T, E> {
   return function expandOperator(source) {
     return new Observable(observer => {
       const sub = new ExpandSubscriber(observer, project, concurrent);
