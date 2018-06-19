@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.2.0"></a>
+# [1.2.0](https://github.com/Netflix/falcor-observable/compare/v1.1.2...v1.2.0) (2018-06-19)
+
+
+### Bug Fixes
+
+* Observable.pipe flow type annotation. ([3c0fdf8](https://github.com/Netflix/falcor-observable/commit/3c0fdf8))
+
+
+### Features
+
+* catchError, defaultIfempty, dematerialize, materialize, filter, toArray. ([443f9d8](https://github.com/Netflix/falcor-observable/commit/443f9d8))
+* concat operator ([afb1a70](https://github.com/Netflix/falcor-observable/commit/afb1a70))
+* expand operator ([d9613e2](https://github.com/Netflix/falcor-observable/commit/d9613e2))
+* Observable.defer ([1a702d7](https://github.com/Netflix/falcor-observable/commit/1a702d7))
+* tap operator ([2bcc6aa](https://github.com/Netflix/falcor-observable/commit/2bcc6aa))
+
+
+
 <a name="1.1.2"></a>
 ## [1.1.2](https://github.com/Netflix/falcor-observable/compare/v1.1.1...v1.1.2) (2018-03-30)
 
