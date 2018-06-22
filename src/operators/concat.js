@@ -1,13 +1,20 @@
 // @flow
 "use strict";
-import type { OperatorFunction, ISubscription } from "../es-observable";
+import type {
+  OperatorFunction,
+  ISubscription,
+  ObservableInput
+} from "../es-observable";
 const { Observable } = require("../es-observable");
 
 function concat<T, E: Error>(
-  ...observables: Observable<T, E>[]
+  ...observables: ObservableInput<T, E>[]
 ): OperatorFunction<T, T, E> {
   return function concatOperator(source: Observable<T, E>): Observable<T, E> {
-    const clonedObservables = [source, ...observables];
+    const clonedObservables = [
+      source,
+      ...observables.map(o => Observable.from(o))
+    ];
 
     return new Observable(observer => {
       let currentSub: ?ISubscription = null;

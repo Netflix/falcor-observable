@@ -6,13 +6,13 @@ const { stub } = require("sinon");
 const { concat } = require("../src/operators/concat");
 
 describe("concat operator", function() {
-  it("concats observables", function() {
+  it("concats observable inputs", function() {
     const observable = Observable.of(0, 1, 2);
     const next = stub();
     const error = stub();
     const complete = stub();
 
-    concat(Observable.of(3, 4, 5))(observable).subscribe({
+    concat([3, 4, 5])(observable).subscribe({
       next,
       error,
       complete
