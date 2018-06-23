@@ -40,8 +40,13 @@ export interface IAdaptsToObservable<T, E = Error> {
   // Flow cannot parse computed properties.
   //[symbolObservable](): IObservable<T, E>
 }
+export interface IPromiseLike<T> {
+  then(onFulfill: ?(value: T) => any, onReject: ?(errorValue: any) => any): any;
+}
 export type ObservableInput<T, E = Error> =
   | IAdaptsToObservable<T, E>
+  | IClassicObservable<T, E>
+  | Promise<T>
   | Iterable<T>;
 
 export interface IObservable<T, E = Error> extends IAdaptsToObservable<T, E> {
@@ -218,17 +223,17 @@ class BaseObservable<T, E = Error> {
     });
   }
 
-  static from(obsOrIter: ObservableInput<T, E>): this {
-    if (typeof obsOrIter === "undefined" || obsOrIter === null) {
+  static from(input: ObservableInput<T, E>): this {
+    if (typeof input === "undefined" || input === null) {
       throw new TypeError();
     }
 
-    if (typeof obsOrIter === "object") {
+    if (typeof input === "object") {
       const observableProp: ?() => IObservable<T, E> =
         // $FlowFixMe: No symbol support.
-        obsOrIter[symbolObservable];
+        input[symbolObservable];
       if (typeof observableProp === "function") {
-        const observable = observableProp.call(obsOrIter);
+        const observable = observableProp.call(input);
         if (typeof observable !== "object" || observable === null) {
           throw new TypeError();
         }
@@ -241,13 +246,38 @@ class BaseObservable<T, E = Error> {
         }
         return new this(observer => observable.subscribe(observer));
       }
+      if (typeof input.subscribe === "function") {
+        // Not part of ES Observable spec
+        const classic: IClassicObservable<T, E> = (input: any);
+        return new this(observer => {
+          const disposable = classic.subscribe(
+            new ClassicFromEsSubscriptionObserver(observer)
+          );
+          return () => disposable.dispose();
+        });
+      }
+      if (typeof input.then === "function") {
+        // Not part of ES Observable spec
+        const promiseLike: IPromiseLike<T> = (input: any);
+        return new this(observer => {
+          promiseLike.then(
+            value => {
+              observer.next(value);
+              observer.complete();
+            },
+            errorValue => {
+              observer.error(errorValue);
+            }
+          );
+        });
+      }
     }
 
     // $FlowFixMe: No symbol support.
-    if (typeof obsOrIter[Symbol.iterator] === "function") {
+    if (typeof input[Symbol.iterator] === "function") {
       return new this(observer => {
         // $FlowFixMe: No symbol support.
-        for (const value of (obsOrIter: Iterable<T>)) {
+        for (const value of (input: Iterable<T>)) {
           observer.next(value);
         }
         observer.complete();
@@ -258,18 +288,7 @@ class BaseObservable<T, E = Error> {
   }
 
   static fromClassicObservable(classic: IClassicObservable<T, E>): this {
-    if (symbolObservable in classic) {
-      return this.from(classic);
-    }
-    if (typeof classic.subscribe !== "function") {
-      throw new TypeError();
-    }
-    return new this(observer => {
-      const disposable = classic.subscribe(
-        new ClassicFromEsSubscriptionObserver(observer)
-      );
-      return () => disposable.dispose();
-    });
+    return this.from(classic);
   }
 
   static empty(): this {
@@ -321,9 +340,9 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
     return super.of.call(C, ...values);
   }
 
-  static from(obsOrIter: ObservableInput<T, E>): this {
+  static from(input: ObservableInput<T, E>): this {
     const C = typeof this === "function" ? this : (EsObservable: any);
-    return super.from.call(C, obsOrIter);
+    return super.from.call(C, input);
   }
 
   static defer(factory: () => ObservableInput<T, E>): this {

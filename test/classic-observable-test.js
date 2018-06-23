@@ -57,7 +57,7 @@ describe("Classic Observable", function() {
     });
   });
 
-  describe("fromClassicObservable", function() {
+  describe("from", function() {
     it("adapts from classic observable", function() {
       const disposable = {
         isDisposed: false,
@@ -72,7 +72,7 @@ describe("Classic Observable", function() {
           return disposable;
         }
       };
-      const obs = Observable.fromClassicObservable(classic);
+      const obs = Observable.from(classic);
       const onNext = stub();
       const onError = stub();
       const onCompleted = stub();
