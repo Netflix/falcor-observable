@@ -204,7 +204,9 @@ class Subscription<T, E = Error> implements ISubscription {
   }
 }
 
-class BaseObservable<T, E = Error> {
+let EsObservable;
+
+class BaseObservable<T, E = Error> implements IAdaptsToObservable<T, E> {
   _subscriber: SubscriberFunction<T, E>;
 
   constructor(subscriber: SubscriberFunction<T, E>): void {
@@ -212,6 +214,20 @@ class BaseObservable<T, E = Error> {
       throw new TypeError("Function expected");
     }
     this._subscriber = subscriber;
+  }
+
+  // $FlowFixMe: No symbol or computed property support.
+  [symbolObservable](): IObservable<T, E> {
+    return new EsObservable(this._subscriber);
+  }
+
+  // Flow doesn't support returning a differently parameterized this type so
+  // specify types on subclasses instead.
+  pipe(...operators: any[]): any {
+    return this.constructor.from(
+      // $FlowFixMe: No symbol support.
+      operators.reduce((acc, curr) => curr(acc), this[symbolObservable]())
+    );
   }
 
   static of(...values: T[]): this {
@@ -312,7 +328,8 @@ class BaseObservable<T, E = Error> {
   }
 }
 
-class EsObservable<T, E = Error> extends BaseObservable<T, E>
+// eslint-disable-next-line no-shadow
+EsObservable = class EsObservable<T, E = Error> extends BaseObservable<T, E>
   implements IObservable<T, E> {
   subscribe(
     observerOrOnNext: ?Observer<T, E> | ((value: T) => void),
@@ -335,6 +352,7 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
     return this;
   }
 
+  // To pass ES Observable tests these static functions must work without this.
   static of(...values: T[]): this {
     const C = typeof this === "function" ? this : (EsObservable: any);
     return super.of.call(C, ...values);
@@ -425,11 +443,7 @@ class EsObservable<T, E = Error> extends BaseObservable<T, E>
       op10: OperatorFunction<R9, R10, E>
     ) => EsObservable<R10, E>) &
     (<R>(...operators: OperatorFunction<T, R, E>[]) => EsObservable<R, E>);
-}
-
-EsObservable.prototype.pipe = (function pipe(...operators) {
-  return operators.reduce((acc, curr) => curr(acc), this);
-}: any);
+};
 
 module.exports = {
   BaseObservable,

@@ -1,12 +1,7 @@
 // @flow
 "use strict";
 
-const symbolObservable = require("symbol-observable").default;
-const {
-  BaseObservable,
-  Observable: EsObservable,
-  Subscription
-} = require("./es-observable");
+const { BaseObservable, Subscription } = require("./es-observable");
 const { ClassicFromEsSubscriptionObserver } = require("./classic-observer");
 
 import type {
@@ -91,7 +86,7 @@ class DisposableFromSubscription implements IDisposable {
 }
 
 class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
-  implements IClassicObservable<T, E>, IAdaptsToObservable<T, E> {
+  implements IClassicObservable<T, E> {
   subscribe(
     observerOrOnNext: ?ClassicObserver<T, E> | ((value: T) => void),
     onError: ?(error: E) => void,
@@ -107,11 +102,6 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
           };
     const subscription = new Subscription(this._subscriber, observer);
     return new DisposableFromSubscription(subscription);
-  }
-
-  // $FlowFixMe: No symbol or computed property support.
-  [symbolObservable](): IObservable<T, E> {
-    return new EsObservable(this._subscriber);
   }
 
   static create(subscriber: ClassicSubscriberFunction<T, E>): this {
@@ -211,11 +201,5 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
     ) => ClassicObservable<R10, E>) &
     (<R>(...operators: OperatorFunction<T, R, E>[]) => ClassicObservable<R, E>);
 }
-
-ClassicObservable.prototype.pipe = (function pipe(...operators) {
-  return ClassicObservable.from(
-    operators.reduce((acc, curr) => curr(acc), this[symbolObservable]())
-  );
-}: any);
 
 module.exports = { Observable: ClassicObservable };
