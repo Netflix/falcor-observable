@@ -58,7 +58,7 @@ describe("ES Observable", function() {
     });
   });
 
-  describe("fromClassicObservable", function() {
+  describe("from", function() {
     it("adapts from classic observable", function() {
       const disposable = {
         isDisposed: false,
@@ -73,7 +73,7 @@ describe("ES Observable", function() {
           return disposable;
         }
       };
-      const obs = Observable.fromClassicObservable(classic);
+      const obs = Observable.from(classic);
       const next = stub();
       const error = stub();
       const complete = stub();
@@ -82,6 +82,40 @@ describe("ES Observable", function() {
       expect(next.args).to.deep.equal([[1]]);
       subscription.unsubscribe();
       expect(disposable.isDisposed).to.equal(true);
+    });
+
+    it("adapts from Promise (resolve)", function(done) {
+      const obs = Observable.from(new Promise((resolve, reject) => resolve(1)));
+      const next = stub();
+      obs.subscribe({
+        next,
+        error(e) {
+          done(e);
+        },
+        complete() {
+          expect(next.args).to.deep.equal([[1]]);
+          done();
+        }
+      });
+    });
+
+    it("adapts from Promise (reject)", function(done) {
+      const err = new Error("my error");
+      const obs = Observable.from(
+        new Promise((resolve, reject) => reject(err))
+      );
+      const next = stub();
+      obs.subscribe({
+        next,
+        error(e) {
+          expect(e).to.equal(err);
+          expect(next.called).to.equal(false);
+          done();
+        },
+        complete() {
+          throw new Error("should not reach here");
+        }
+      });
     });
   });
 
