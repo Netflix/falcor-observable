@@ -2,7 +2,6 @@
 "use strict";
 
 const { BaseObservable, Subscription } = require("./es-observable");
-const { ClassicFromEsSubscriptionObserver } = require("./classic-observer");
 
 import type {
   IAdaptsToObservable,
@@ -71,20 +70,6 @@ class EsFromClassicObserver<T, E = Error> {
   }
 }
 
-// XXX Should these go directly on Subscription?
-class DisposableFromSubscription implements IDisposable {
-  _subscription: ISubscription;
-  constructor(subscription: ISubscription): void {
-    this._subscription = subscription;
-  }
-  dispose(): void {
-    this._subscription.unsubscribe();
-  }
-  get isDisposed(): boolean {
-    return this._subscription.closed;
-  }
-}
-
 class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
   implements IClassicObservable<T, E> {
   subscribe(
@@ -100,8 +85,7 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
             error: onError,
             complete: onCompleted
           };
-    const subscription = new Subscription(this._subscriber, observer);
-    return new DisposableFromSubscription(subscription);
+    return new Subscription(this._subscriber, observer);
   }
 
   static create(subscriber: ClassicSubscriberFunction<T, E>): this {
@@ -110,8 +94,7 @@ class ClassicObservable<T, E = Error> extends BaseObservable<T, E>
       throw new TypeError("Function expected");
     }
     return new C(observer => {
-      const oldObserver = new ClassicFromEsSubscriptionObserver(observer);
-      const cleanup = subscriber(oldObserver);
+      const cleanup = subscriber(observer);
       if (typeof cleanup !== "object" || cleanup === null) {
         return cleanup;
       }

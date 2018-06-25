@@ -8,8 +8,12 @@ const {
   symbolError,
   popError
 } = require("./try-catch");
-const { ClassicFromEsSubscriptionObserver } = require("./classic-observer");
-import type { IClassicObservable } from "./classic-observable";
+import type {
+  IClassicObservable,
+  IClassicSubscriptionObserver,
+  IDisposable,
+  ClassicSubscriberFunction
+} from "./classic-observable";
 
 export interface ISubscriptionObserver<T, E = Error> {
   next(value: T): void;
@@ -27,6 +31,10 @@ type Cleanup = ?{ +unsubscribe: () => void } | (() => void);
 
 export type SubscriberFunction<T, E = Error> = (
   observer: ISubscriptionObserver<T, E>
+) => Cleanup;
+
+type BaseSubscriberFunction<T, E = Error> = (
+  observer: SubscriptionObserver<T, E>
 ) => Cleanup;
 
 export type Observer<T, E = Error> = {
@@ -106,7 +114,7 @@ function callCleanup<T, E>(subscription: Subscription<T, E>) {
 }
 
 class SubscriptionObserver<T, E = Error>
-  implements ISubscriptionObserver<T, E> {
+  implements ISubscriptionObserver<T, E>, IClassicSubscriptionObserver<T, E> {
   _subscription: Subscription<T, E>;
 
   constructor(subscription: Subscription<T, E>): void {
@@ -147,14 +155,27 @@ class SubscriptionObserver<T, E = Error>
   get closed(): boolean {
     return typeof this._subscription._observer === "undefined";
   }
+
+  onNext(value: T): void {
+    this.next(value);
+  }
+  onError(errorValue: E): void {
+    this.error(errorValue);
+  }
+  onCompleted(): void {
+    this.complete();
+  }
+  get isStopped(): boolean {
+    return this.closed;
+  }
 }
 
-class Subscription<T, E = Error> implements ISubscription {
+class Subscription<T, E = Error> implements ISubscription, IDisposable {
   _observer: Observer<T, E> | void;
   _cleanup: Cleanup;
 
   constructor(
-    subscriber: SubscriberFunction<T, E>,
+    subscriber: BaseSubscriberFunction<T, E>,
     observer: Observer<T, E>
   ): void {
     this._observer = observer;
@@ -202,14 +223,21 @@ class Subscription<T, E = Error> implements ISubscription {
   get closed(): boolean {
     return typeof this._observer === "undefined";
   }
+
+  dispose(): void {
+    this.unsubscribe();
+  }
+  get isDisposed(): boolean {
+    return this.closed;
+  }
 }
 
 let EsObservable;
 
 class BaseObservable<T, E = Error> implements IAdaptsToObservable<T, E> {
-  _subscriber: SubscriberFunction<T, E>;
+  _subscriber: BaseSubscriberFunction<T, E>;
 
-  constructor(subscriber: SubscriberFunction<T, E>): void {
+  constructor(subscriber: BaseSubscriberFunction<T, E>): void {
     if (typeof subscriber !== "function") {
       throw new TypeError("Function expected");
     }
@@ -266,9 +294,7 @@ class BaseObservable<T, E = Error> implements IAdaptsToObservable<T, E> {
         // Not part of ES Observable spec
         const classic: IClassicObservable<T, E> = (input: any);
         return new this(observer => {
-          const disposable = classic.subscribe(
-            new ClassicFromEsSubscriptionObserver(observer)
-          );
+          const disposable = classic.subscribe(observer);
           return () => disposable.dispose();
         });
       }
@@ -361,11 +387,6 @@ EsObservable = class EsObservable<T, E = Error> extends BaseObservable<T, E>
   static from(input: ObservableInput<T, E>): this {
     const C = typeof this === "function" ? this : (EsObservable: any);
     return super.from.call(C, input);
-  }
-
-  static defer(factory: () => ObservableInput<T, E>): this {
-    const C = typeof this === "function" ? this : (EsObservable: any);
-    return super.defer.call(C, factory);
   }
 
   pipe: (() => EsObservable<T, E>) &
