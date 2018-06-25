@@ -3,11 +3,9 @@
 export type {
   IDisposable,
   IClassicObservable as IObservable,
+  IClassicSubscriptionObserver as IObserver,
   ClassicObserver as PartialObserver
 } from "./classic-observable";
-export type {
-  IClassicSubscriptionObserver as IObserver
-} from "./classic-observer";
 
 module.exports.Observable = require("./classic-observable").Observable;
 module.exports.map = require("./operators/map").map;
