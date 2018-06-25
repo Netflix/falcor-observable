@@ -3,12 +3,7 @@
 
 const { BaseObservable, Subscription } = require("./es-observable");
 
-import type {
-  IAdaptsToObservable,
-  IObservable,
-  ISubscription,
-  OperatorFunction
-} from "./es-observable";
+import type { OperatorFunction } from "./es-observable";
 
 export interface IDisposable {
   dispose(): void;

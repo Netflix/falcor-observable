@@ -11,8 +11,7 @@ const {
 import type {
   IClassicObservable,
   IClassicSubscriptionObserver,
-  IDisposable,
-  ClassicSubscriberFunction
+  IDisposable
 } from "./classic-observable";
 
 export interface ISubscriptionObserver<T, E = Error> {
